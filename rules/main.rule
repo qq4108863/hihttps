@@ -1,0 +1,21 @@
+
+###SQL注入测试规则，凡是URL、ARGS中含有select、delete等关键字视为SQL注入####################
+MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex|drop" "msg:sql keywords" "mz:BODY|URL|ARGS|$HEADERS_VAR:Cookie" "s:$SQL:4" id:1000;
+
+
+###缺省是报警模式ruleAction alert，要设置为阻断模式，请开启ruleAction drop#################
+#ruleAction drop
+
+######################HTTP头错误视为攻击，默认不开启#######################################
+#ErrIsAttack on
+
+######################检测到攻击后，重定向到某个网页，仅ruleAction drop有效################
+#DeniedUrl "http://www.hihttps.com/404.html"
+
+###如果文件名没做特殊处理，强烈建议开启www目录文件检查模式，阻止大多数攻击#################
+#www_dir /usr/share/nginx/html/
+
+
+
+######################更多高级设置可以联系QQ/微信:4108863##################################
+
