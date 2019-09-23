@@ -51,7 +51,7 @@
  * When it is compiled with JIT, this function execute strlen on the subject.
  * Currently the only supported flag is REG_NOTBOL.
  */
-int regex_exec_match(const struct my_regex *preg, const char *subject,
+int ngx_regex_exec_match(const struct my_regex *preg, const char *subject,
                      size_t nmatch, regmatch_t pmatch[], int flags) {
 #if defined(USE_PCRE) || defined(USE_PCRE_JIT) || defined(USE_PCRE2) || defined(USE_PCRE2_JIT)
 	int ret;
@@ -182,7 +182,7 @@ ngx_int_t ngx_regex_compile(ngx_regex_compile_t *rc)
 	
 }
 
-int regex_comp(const char *str, struct my_regex *regex, int cs, int cap, char **err)
+int ngx_regex_comp(const char *str, struct my_regex *regex, int cs, int cap, char **err)
 {
 #if defined(USE_PCRE) || defined(USE_PCRE_JIT)
 	int flags = 0;

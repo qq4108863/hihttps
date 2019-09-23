@@ -26,6 +26,8 @@
 #include "ssl_regex.h"
 #include "httpx.h"
 #include "atklog.h"
+#include "cc_ddos.h"
+
 
 #include "../libinjection/libinjection_sqli.h"
 #include "../libinjection/libinjection_xss.h"
@@ -80,6 +82,8 @@ typedef struct  {
   int   (*pars)(ngx_conf_t *, ngx_str_t *, ngx_http_rule_t *);
 } ngx_http_modsecurity_parser_t;
 
+
+static unsigned int get_executable_path( char* processdir,char* processname, unsigned int len);
 
 
 int read_line(char *buf, int len, FILE *fp)
@@ -272,6 +276,15 @@ dummy_zone(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
 	  has_zone = 1;
 	  continue;
 	}
+
+	else
+	if (!strncmp(tmp_ptr, "DDOS", strlen("DDOS"))) {
+	  rule->br->ddos = 1;
+	  tmp_ptr += strlen("DDOS");
+	  has_zone = 1;
+	  continue;
+	}
+	
 	else
 	  if (!strncmp(tmp_ptr, "URL", strlen("URL"))) {
 	    rule->br->url = 1;
@@ -710,7 +723,11 @@ mod_str_from_file(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   char filename[256],line[128],*p;
   int len;
 
+  char path[MAX_LEN+1] = {0};
+  char name[16] = {0};
 
+  if(-1 == get_executable_path(path,name,sizeof(path)))
+	return (NGX_CONF_ERROR);;
   
 
   if (!rule->br)
@@ -723,8 +740,8 @@ mod_str_from_file(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   	return (NGX_CONF_ERROR);
   p++;
   
-  	
-  snprintf(filename,sizeof(filename)-1,"./%s",p);
+  
+  snprintf(filename,sizeof(filename)-1,"%srules/%s",path,p);
   fp = fopen(filename,"r");
   if(!fp)    return (NGX_CONF_ERROR); 
 
@@ -1606,9 +1623,9 @@ mod_p1(ngx_conf_t *r, char *p1, ngx_http_rule_t *rule)
 		  has_zone = 1;
 	 
 	}
-    else	if (!strncmp(tmp_ptr, "REQUEST_HEADERS", strlen("REQUEST_HEADERS"))) {
+    else	if (!strncmp(tmp_ptr, "REQUEST_HEADERS:User-Agent", strlen("REQUEST_HEADERS:User-Agent"))) {
 		  rule->br->headers = 1;
-		  tmp_ptr += strlen("REQUEST_HEADERS");
+		  tmp_ptr += strlen("REQUEST_HEADERS:User-Agent");
 		  has_zone = 1;
 	 
 	}
@@ -1642,6 +1659,12 @@ mod_p1(ngx_conf_t *r, char *p1, ngx_http_rule_t *rule)
 		  rule->br->file_ext = 1;
 		  //rule->br->body = 1;
 		  tmp_ptr += strlen("FILES");
+		  has_zone = 1;
+		 
+	}
+	else	if (!strncmp(tmp_ptr, "DDOS", strlen("DDOS"))) {
+		  rule->br->ddos = 1;
+		  tmp_ptr += strlen("DDOS");
 		  has_zone = 1;
 		 
 	}
@@ -1719,6 +1742,43 @@ mod_p2(ngx_conf_t *r, char *p2, ngx_http_rule_t *rule)
 	return ret;
 }
 
+void
+cc_ddos_parse(char *p3, ngx_http_rule_t *rule)
+{
+	 char *var_name = NULL, *var_value = NULL,*s = NULL;;
+		
+    rule->ddos.block_timeout     = 0;
+	rule->ddos.burst_time_slice  = 0;
+	rule->ddos.counter_threshold = 0;
+
+	var_name = strstr(p3,"ddos_burst_time_slice=");
+	if(!var_name)	return;
+	s = strstr(var_name, "=");
+	var_value = s + 1;
+    while ((*var_value != '\0')&&(isspace(*var_value))) 
+	 	var_value++;
+	 rule->ddos.burst_time_slice = atoi(var_value);
+
+	var_name = strstr(p3,"ddos_counter_threshold=");
+	if(!var_name)	return;
+	s = strstr(var_name, "=");
+	var_value = s + 1;    
+    while ((*var_value != '\0')&&(isspace(*var_value))) 
+	 	var_value++;
+    rule->ddos.counter_threshold = atoi(var_value);
+
+	var_name = strstr(p3,"ddos_block_timeout=");
+	if(!var_name)	return;
+	s = strstr(var_name, "=");
+	var_value = s + 1;
+    while ((*var_value != '\0')&&(isspace(*var_value))) 
+	 	var_value++;
+	rule->ddos.block_timeout = atoi(var_value);
+
+	 
+	//printf("DDOS burst_time_slice=%d,counter_threshold=%d,block_timeout=%d\n",rule->ddos.burst_time_slice,rule->ddos.counter_threshold,rule->ddos.block_timeout);
+	
+}
 
 /*
 
@@ -1786,7 +1846,8 @@ mod_p3(ngx_conf_t *r, char *p3, ngx_http_rule_t *rule)
 	memcpy(str->data,ptr,len);
 	str->len = len;	
 	rule->log_msg = str;
-	
+
+	cc_ddos_parse(p3, rule);
 	//printf("ruleid=%d			msg=%s ",rule->rule_id,str->data);
 	
 	return (NGX_CONF_OK);
@@ -1957,7 +2018,7 @@ add_rules(ngx_conf_t *cf, char *p1,char *p2 ,char *p3,
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }	
 
-     /* push in files rules, as it's matching the URI */
+  /* push in files rules, as it's matching the URI */
   if (rule.br->file_ext)	{
      
     if (alcf->file_rules == NULL) {
@@ -1970,7 +2031,20 @@ add_rules(ngx_conf_t *cf, char *p1,char *p2 ,char *p3,
     if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
     memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
   }	
-  
+
+  /* push in ddos rules, as it's matching the URI */
+  if (rule.br->ddos)	{
+     
+    if (alcf->ddos_rules == NULL) {
+      alcf->ddos_rules = ngx_array_create(cf->pool, 2,
+					     sizeof(ngx_http_rule_t));
+      if (alcf->ddos_rules == NULL) 
+	return NGX_CONF_ERROR; /* LCOV_EXCL_LINE */
+    }
+    rule_r = ngx_array_push(alcf->ddos_rules);
+    if (!rule_r) return (NGX_CONF_ERROR); /* LCOV_EXCL_LINE */
+    memcpy(rule_r, &rule, sizeof(ngx_http_rule_t));
+  }	
   
   return (NGX_CONF_OK);
 }
@@ -2060,9 +2134,9 @@ chk_basic_rule(ngx_str_t *str,
     len = str->len;
   
 #if defined(USE_PCRE) || defined(USE_PCRE_JIT)
-	match = regex_exec_match(rl->br->rx->regex,(const char *) str->data,nm,pmatch,flags);  
+	match = ngx_regex_exec_match(rl->br->rx->regex,(const char *) str->data,nm,pmatch,flags);  
 #else
-	match = regex_exec_match(&rl->br->rx->re,(const char *) str->data,nm,pmatch,flags); 
+	match = ngx_regex_exec_match(&rl->br->rx->re,(const char *) str->data,nm,pmatch,flags); 
 #endif
  
     *nb_match += match;
@@ -2204,13 +2278,16 @@ int chk_all_rules(ngx_str_t *name, enum DUMMY_MATCH_ZONE	zone,http_waf_msg *req)
 	  case FILE_EXT:
 	   rules = main_cf->file_rules;
 	    break;
+	  case DDOS:
+	   rules = main_cf->ddos_rules;
+	    break;
 	  default:
 	    break;
   	};
 		
 	if (rules == NULL)
 		return 0;
-	if(req && req->rule_id > 100) //1-100 reserve
+	if(req && req->rule_id > 200) //1-200 reserve
 		return 0;
 
 	  /* check for overlong/surrogate utf8 encoding */
@@ -2236,6 +2313,13 @@ int chk_all_rules(ngx_str_t *name, enum DUMMY_MATCH_ZONE	zone,http_waf_msg *req)
 				if(r[i].log_msg && r[i].log_msg->data);
 				req->log_msg = r[i].log_msg->data;	
 				req->str_matched = name->data;
+				
+				if(zone == DDOS)
+				{
+					req->ddos_rule.block_timeout     = r[i].ddos.block_timeout;
+					req->ddos_rule.burst_time_slice  = r[i].ddos.burst_time_slice;
+					req->ddos_rule.counter_threshold = r[i].ddos.counter_threshold;
+				}
 			}
 			//printf("Ruleid [%d]:   \"%s\"  Matched   Attack!\n",r[i].rule_id,name->data);	
 			return ret;
@@ -2695,6 +2779,25 @@ void free_pool(void)
 }
 
 
+void get_pid(void)
+{
+	FILE *fp;
+	int pid;
+	char tmp[16];
+
+	pid=getpid();
+	if(pid<=0)
+		return;
+
+	fp=fopen("/hihttps/pid/hihttps.pid","w+");
+	if(fp)
+	{
+		snprintf(tmp,sizeof(tmp)-1,"%d",pid);
+		fputs(tmp,fp);
+		fclose(fp);
+	}	
+	//printf("PID=%d ",pid);
+}
 
 void init_rules()
 {
@@ -2705,7 +2808,7 @@ void init_rules()
 	char name[16];	
 	
 	init_pools();
-	
+	get_pid();
 	
 	if(-1 == get_executable_path(exe_dir,name,sizeof(exe_dir)))
 	{
@@ -2744,7 +2847,7 @@ void init_rules()
 
 	printf("The OWASP ModSecurity Core Rule Set is distributed under Apache Software License (ASL) version 2. For More Rules Please visit https://github.com/SpiderLabs/owasp-modsecurity-crs/\n\n");
 
-	
+	init_cc_ddos();
 	read_www_files(gvar.www_dir.data);
 	read_white_url(rule_dir);
 	read_black_url(rule_dir);

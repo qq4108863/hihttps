@@ -11,7 +11,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * For more ,please contact QQ/wechat:4108863 mail:4108863@qq.com
+ * For more ,please contact QQ:4108863 weichat:wmkwang mail:4108863@qq.com
  */
 
 #ifndef __ATTACK_LOG_H__
@@ -28,6 +28,9 @@ void init_atk_log(void);
 void open_log_socket(void);
 
 void log_to_file(struct sockaddr_storage addr,http_waf_msg *req,int action,char *raw_buf,int raw_len);
+void bytes_stat(struct sockaddr_storage addr,int in,int out);
+void req_stat(struct sockaddr_storage addr,int req,int atk);
+
 
 
 

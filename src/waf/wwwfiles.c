@@ -21,8 +21,8 @@
 Hashmap hash_files,hash_white_url,hash_black_url;
 static int if_find = 1;
 
-#define BLACK_RULEID 10
-#define NO_WWWFILE_RULEID 20
+#define BLACK_RULEID 101
+#define NO_WWWFILE_RULEID 102
 
 
 
@@ -256,7 +256,7 @@ void read_www_files(char *dir)
 		*p = '\0';
 	
 	read_file_list(dir,len);
-	printf("DIR %s,Total file numbers = %d\n",dir,((Hashmap *)&hash_files)->used_slots);
+	printf("DIR %s,Total file numbers =%d\n",dir,((Hashmap *)&hash_files)->used_slots);
 	//hashmap_dump(&hash_files);
 	
 	

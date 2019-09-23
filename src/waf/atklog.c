@@ -36,29 +36,79 @@
 int logsockfd = -1;
 FILE * atk_log_file = NULL;
 
+#define MAX_STAT 8
+typedef struct statlog_s  {
+	unsigned int  ip;
+	unsigned int  cum_conn; 
+	unsigned long bytes_in; 
+	unsigned long bytes_out;
+	unsigned long cum_req;
+	unsigned long cum_atk; 	
+	unsigned long cum_err; 	
+} statlog_t;
 
-
-
-
-void open_log_socket(void)
-{
-	int sockopt = 1;
-
-	 logsockfd = socket(AF_INET,SOCK_DGRAM,0);
-	 if(logsockfd < 0)
-	{
-			printf("I cannot socket success\n");
-			return ;
-	}
-	setsockopt(logsockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&sockopt, sizeof(sockopt));	
-	if (-1 == fcntl(logsockfd, F_SETFL, O_NONBLOCK))
-    {
-	      printf("fcntl socket error!\n");
-	       
-   	 }
+//SSLLOGCENTER  专业版把攻击数据提交到分布式日志中心
+typedef struct atklog_s  {
 	
+	unsigned int time;//时间
+	unsigned int sip;//源IP
+	unsigned int dip;//目的IP
+	unsigned int ruleid;//攻击规则
+
+	unsigned int uid;//唯一ID
+	unsigned int detail;//攻击者详情对应的日志文件，整个HTTP头信息
+	unsigned short len;//攻击详情长度
+	unsigned short sport;//源端口	
+	unsigned short type;//攻击类型
+	unsigned short severity;//危险级别	
+} atklog_t;
+
+
+
+
+statlog_t statlog[MAX_STAT] = { 0 };
+time_t last_time = 0;
+
+
+
+
+/**
+* print_log 调试16进制打印输出
+*
+* @name 名字
+* @data 打印的内容
+* len   打印的字节数
+* @return 无
+*/
+
+static void print_log(char *name,unsigned char *data,int len)
+{
+	int i,j,k;
+
+	//if(!debug_mode)
+		//return;
+	
+	if(name) printf("-------%s-------%dbytes-----------------------------\n",name,len);
+
+	for (i=0; i<len; i+=16) {
+        printf("| ");
+        for (j=i, k=0; k<16 && j<len; ++j, ++k)
+            printf("%.2x ",data[j]);
+        for (; k<16; ++k)
+            printf("   ");
+       printf("|");
+        for (j=i, k=0; k<16 && j<len; ++j, ++k) {
+            unsigned char c = data[j];
+            if (!isprint(c) || (c=='\t')) c = '.';
+            printf("%c",c);
+        }
+        for (; k<16; ++k)
+            printf("   ");
+        printf("|\n");
+    }
 
 }
+
 
 void send_to_local(char *cmd,int len)
 
@@ -84,6 +134,97 @@ void send_to_local(char *cmd,int len)
 
 
 
+void send_stat_logcenter(void )
+{
+
+	char tmp[sizeof(statlog_t) * MAX_STAT + 64];	
+	int len;
+
+		
+	memset(tmp,0,sizeof(tmp));
+	memcpy(tmp,"SSLSTAT",sizeof("SSLSTAT")-1);	
+	memcpy(tmp + 32,(char *)&(statlog),sizeof(statlog));
+	
+	len = sizeof(statlog) + 32;	
+	send_to_local(tmp,len);	
+
+
+}
+
+
+void zero_stat_log(void)
+{
+	memset(&statlog,0,sizeof(statlog));
+	
+}
+
+void bytes_stat(struct sockaddr_storage addr,int in,int out)
+{
+	unsigned int src;
+	int i;
+	time_t now;
+
+	switch (addr.ss_family) {
+	case AF_INET:
+		src = ((struct sockaddr_in *)&addr)->sin_addr.s_addr;	
+		break;
+	case AF_INET6:		
+		return;
+	default:
+		return;
+	}
+	
+	//you can add more code here
+}
+
+void req_stat(struct sockaddr_storage addr,int req,int atk)
+{
+	unsigned int src;
+	int i;
+	
+	switch (addr.ss_family) {
+	case AF_INET:
+		src = ((struct sockaddr_in *)&addr)->sin_addr.s_addr;	
+		break;
+	case AF_INET6:		
+		return;
+	default:
+		return;
+	}
+	
+	//you can add more code here
+	
+
+	
+}
+
+
+
+
+
+
+void open_log_socket(void)
+{
+	int sockopt = 1;
+
+	 logsockfd = socket(AF_INET,SOCK_DGRAM,0);
+	 if(logsockfd < 0)
+	{
+			printf("I cannot socket success\n");
+			return ;
+	}
+	setsockopt(logsockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&sockopt, sizeof(sockopt));	
+	if (-1 == fcntl(logsockfd, F_SETFL, O_NONBLOCK))
+    {
+	      printf("fcntl socket error!\n");
+	       
+   	 }
+	
+
+}
+
+
+
 
 void init_atk_log(void)
 {
@@ -103,22 +244,6 @@ void init_atk_log(void)
 }
 
 
-/*SSLLOGCENTER  专业版把攻击数据提交到分布式日志中心
-typedef struct atklog_s  {
-	
-	unsigned int time;//时间
-	unsigned int sip;//源IP
-	unsigned int dip;//目的IP
-	unsigned int ruleid;//攻击规则
-
-	unsigned int uid;//唯一ID
-	unsigned int detail;//攻击者详情对应的日志文件，整个HTTP头信息
-	unsigned short len;//攻击详情长度
-	unsigned short sport;//源端口	
-	unsigned short type;//攻击类型
-	unsigned short severity;//危险级别	
-} atklog_t;
-*/
 
 void send_to_logcenter(struct sockaddr_storage addr,http_waf_msg *req,char *detail,char *raw_buf,int raw_len)
 {
@@ -181,6 +306,9 @@ void log_to_file(struct sockaddr_storage addr,http_waf_msg *req,int action,char 
 	
 	if(req->logcenter)
 		return;
+
+	req_stat(addr, 1, 0); /*req_cnt*/
+	req_stat(addr, 0, 1);/*atk_cnt*/
 	
 	msg_len = sizeof(buf) - 8;
 	max_len = msg_len;

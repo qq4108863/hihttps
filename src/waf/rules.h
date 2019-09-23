@@ -22,9 +22,12 @@
 
 #define ngx_conf_log_error(FEATURE, DEF, LOG, ST, ...) printf("ngx_conf_log_error")
 
+
 #define ALLOW 0
 #define DROP 1
 #define ALERT 2
+#define REQ_CNT 8
+
 
 
 enum ATK_TYPE {
@@ -70,6 +73,7 @@ enum DUMMY_MATCH_ZONE {
   RAW_BODY,
   FILE_EXT,
   COOKIE,
+  DDOS,
   UNKNOWN
 };
 
@@ -200,6 +204,7 @@ typedef struct
   ngx_int_t     user_agent:1;
   ngx_int_t     post_args:1;
   ngx_int_t     get_args:1;
+  ngx_int_t     ddos:1;
   
   ngx_str_t     name;  
    
@@ -251,6 +256,15 @@ typedef struct
   ngx_flag_t	log:1;
 } ngx_http_check_rule_t;
 
+/*DDOS && CC threshold*/
+typedef struct
+{
+	ngx_int_t			burst_time_slice;
+	ngx_int_t			counter_threshold;
+	ngx_int_t			block_timeout;
+}ngx_ddos_rule_t;
+
+
 /* TOP level rule structure */
 typedef struct
 {
@@ -265,6 +279,7 @@ typedef struct
   ngx_int_t		    severity;
   ngx_str_t			*log_msg; // a specific log message
   ngx_int_t			score; //also handles DENY and ALLOW
+  ngx_ddos_rule_t   ddos;
   
   /* List of scores increased on rule match. */
   ngx_array_t			*sscores;
@@ -312,6 +327,7 @@ typedef struct
   ngx_array_t	*args_post_rules;
   ngx_array_t	*args_rules;
   ngx_array_t	*file_rules;
+  ngx_array_t	*ddos_rules;
 
   
   ngx_array_t	*locations; /*ngx_http_dummy_loc_conf_t*/

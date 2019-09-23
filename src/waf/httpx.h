@@ -25,6 +25,12 @@ static char http_log_msg[512] = {0};
 #define MAX_HTTP_HEADER_SIZE 1024*20
 #define MAX_HTTP_BODY_SIZE 1024*20
 
+typedef struct
+{
+	int			burst_time_slice;
+	int			counter_threshold;
+	int			block_timeout;
+}http_ddos_rule_t;
 
 typedef enum _http_mthd http_mthd;
 enum _http_mthd {
@@ -76,23 +82,23 @@ enum _http_mthd {
  * ultimately be removed.
  */
 enum ngx_h1_state {
-	HTTP_MSG_RQBEFORE     =  0, // request: leading LF, before start line
-	HTTP_MSG_RQBEFORE_CR  =  1, // request: leading CRLF, before start line
+	MSG_RQBEFORE     =  0, // request: leading LF, before start line
+	MSG_RQBEFORE_CR  =  1, // request: leading CRLF, before start line
 	/* these ones define a request start line */
-	HTTP_MSG_RQMETH       =  2, // parsing the Method	
+	MSG_RQMETH       =  2, // parsing the Method	
 
-	HTTP_MSG_LAST_LF      = 3, // parsing last LF
-	/* error state : must be before HTTP_MSG_BODY so that (>=BODY) always indicates
+	MSG_LAST_LF      = 3, // parsing last LF
+	/* error state : must be before MSG_BODY so that (>=BODY) always indicates
 	 * that data are being processed.
 	 */
-	HTTP_MSG_ERROR        = 4, // an error occurred
+	MSG_ERROR        = 4, // an error occurred
 	/* Body processing.
-	 * The state HTTP_MSG_BODY is a delimiter to know if we're waiting for headers
+	 * The state MSG_BODY is a delimiter to know if we're waiting for headers
 	 * or body. All the sub-states below also indicate we're processing the body,
 	 * with some additional information.
 	 */
-	HTTP_MSG_BODY         = 5, // parsing body at end of headers
-	HTTP_MSG_DONE         = 6 // parsing body at end of headers
+	MSG_BODY         = 5, // parsing body at end of headers
+	MSG_DONE         = 6 // parsing body at end of headers
 	
 };
 
@@ -197,8 +203,10 @@ struct _http_waf_msg {
 	u_char *req_dir;
 	u_char *boundary;
 
-	int no_www_file;                /*if exits url file in www */
-	int white_url;				   /* url white list */			
+	int req_cnt;                  /*request count */ 
+	int ddos;                     /*ddos & cc */ 
+	int no_www_file;              /*if exits url file in www */
+	int white_url;				  /* url white list */			
 	int black_url;				  /* url black list */	
 	int rule_id;                  //matched attack ruleid
 	int severity;                 //severity:'CRITICAL' 'warning'
@@ -207,6 +215,7 @@ struct _http_waf_msg {
 	int err_state;                //error head is attack
 	u_char *log_msg;              //attack rule log msg
 	u_char *str_matched;          //matched attack
+	http_ddos_rule_t ddos_rule;
 	
     //char *content_type[2];        /**< content type */
     char *content_encoding[2];    /**< content encoding */

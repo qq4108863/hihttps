@@ -60,6 +60,7 @@
 #include "foreign/uthash.h"
 #include "foreign/vsa.h"
 #include "waf/rules.h"
+#include "waf/cc_ddos.h"
 #include "waf/atklog.h"
 
 
@@ -2301,9 +2302,11 @@ ssl_read(struct ev_loop *loop, ev_io *w, int revents)
 		return;
 	}
 
-	if (t > 0) {
-
+	if (t > 0) {//printf("%s\n",buf);
+		bytes_stat(ps->remote_ip, t, 0);
 	    ret = process_http(buf,t,ps->req);
+	    if(REQ_CNT == ret)
+	       req_stat(ps->remote_ip, 1, 0);	
 		if(DROP == ret || ALERT == ret)
 		{
 			log_to_file(ps->remote_ip,ps->req,ret,buf,t);
@@ -2311,7 +2314,22 @@ ssl_read(struct ev_loop *loop, ev_io *w, int revents)
 			{
 				SSL_write(ps->ssl, gvar.denied_url.data, gvar.denied_url.len);
 				shutdown_proxy(ps, SHUTDOWN_HARD);
+				return;
+			}
+		}
+		if(1 == ps->req->ddos)
+		{			
+			ps->req->ddos = 0;
+			ret =  process_cc_ddos(ps->remote_ip,ps->req);
+			if(DROP == ret || ALERT == ret)
+			{
+				log_to_file(ps->remote_ip,ps->req,ret,buf,t);
+				//if(DROP == ret) //block ddos 
+				{
+					SSL_write(ps->ssl, gvar.denied_url.data, gvar.denied_url.len);
+					shutdown_proxy(ps, SHUTDOWN_HARD);
 					return;
+				}
 			}
 		}
 		
@@ -2352,6 +2370,7 @@ ssl_write(struct ev_loop *loop, ev_io *w, int revents)
 	char *next = ringbuffer_read_next(&ps->ring_clear2ssl, &sz);
 	t = SSL_write(ps->ssl, next, sz);
 	if (t > 0) {
+		bytes_stat(ps->remote_ip, 0, t);
 		if (t == sz) {
 			ringbuffer_read_pop(&ps->ring_clear2ssl);
 			if (ps->clear_connected)
@@ -2451,6 +2470,13 @@ handle_accept(struct ev_loop *loop, ev_io *w, int revents)
 		return;
 	}
 #endif
+
+	if(0 < if_block_connect(addr))
+	{
+		(void) close(client);
+		return;
+	}
+
 
 	settcpkeepalive(client);
 

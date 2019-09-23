@@ -115,7 +115,7 @@ void hashmap_put(Hashmap *h, char *key, char *key_end,
 		  char *data, char *data_end);
 void hashmap_put_unique(Hashmap*, void *key, void *key_end, 
 		  void *data, void *data_end);
-void hashmap_put_qqkey(Hashmap *h, char *key, char *key_end, 
+void hashmap_put_cckey(Hashmap *h, char *key, char *key_end, 
 		  char *data, char *data_end);
 	
 		  	  	    

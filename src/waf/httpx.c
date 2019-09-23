@@ -817,7 +817,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 		  {
 			/* bad closing boundary ?*/
 			
-			req->err_state = HTTP_MSG_ERROR;
+			req->err_state = MSG_ERROR;
 			return ;
 	      } 
 		  else
@@ -835,7 +835,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 		{
 		    /* bad boundary */
 			//printf("!!!!!!! boundary over-------------%x %x---------%d    %s\n",src[idx+boundary_len+2],src[idx+boundary_len+3],len - idx,src+idx+2);
-		    req->err_state = HTTP_MSG_ERROR;
+		    req->err_state = MSG_ERROR;
 		    return ;
 	    }
 
@@ -853,7 +853,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
     	if (ngx_strncasecmp(src+idx, (u_char *) "content-disposition: form-data;", 31)) 
 		{		      
 			  //printf("!!!!!!!error boundary----------------Unknown content-type: %s", src+idx);
-		      req->err_state = HTTP_MSG_ERROR;		     
+		      req->err_state = MSG_ERROR;		     
 		      return ;
     	}
 
@@ -861,7 +861,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 	    line_end = (u_char *) ngx_strchr(src+idx, '\n');
 	    if (!line_end)
 		{
-	       req->err_state = HTTP_MSG_ERROR;
+	       req->err_state = MSG_ERROR;
 	       return ;
 	    }
 
@@ -869,14 +869,14 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 	    varn_start = varn_end = filen_start = filen_end = NULL;
 	    if (nx_content_disposition_parse(src+idx, line_end, &varn_start, &varn_end,
 					     &filen_start, &filen_end) != NGX_OK) {
-	      req->err_state = HTTP_MSG_ERROR;
+	      req->err_state = MSG_ERROR;
 	      return ;
 	    }
 	    /* var name is mandatory */
 	    if (!varn_start || !varn_end || varn_end <= varn_start) 
 		{
 		  //printf("!!!!!!!error boundary--------------varn_start-----------------------\n");	
-	      req->msg_state = HTTP_MSG_ERROR;
+	      req->msg_state = MSG_ERROR;
 	      return ;
 	    }
 		
@@ -888,7 +888,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 	      line_end = (u_char *) ngx_strchr(line_end+1, '\n');
 	      if (!line_end)
 		  {		
-			  req->err_state = HTTP_MSG_ERROR;		     
+			  req->err_state = MSG_ERROR;		     
 		      return ;		
 	      }
     	}
@@ -900,7 +900,7 @@ static void multipart_parse(u_char *src,http_waf_msg * req)
 	    idx += (u_char *)line_end - (src+idx) + 1;
 	    if (src[idx] != '\r' || src[idx+1] != '\n') 
 		{
-		     req->err_state = HTTP_MSG_ERROR;
+		     req->err_state = MSG_ERROR;
 		     return ;
 	    }
 
@@ -1008,10 +1008,17 @@ static void decode_uri(char *uri,http_waf_msg * req)
 	p = strrchr(uri,' ');
 	if(!p || uri[0] != '/')
 	{
-		req->err_state  = HTTP_MSG_ERROR;
+		req->err_state  = MSG_ERROR;
 		return;
 	}
 	*p = '\0';
+
+	chkvalue.data = uri;
+	chkvalue.len  = strlen(uri);
+	if(1 == chk_all_rules(&chkvalue,DDOS,req))	
+		req->ddos = 1;
+				
+	
 	
 	for(i = 0;i < uri_len;i++)
 	{
@@ -1060,6 +1067,15 @@ static void decode_cookie(char *cookie,http_waf_msg * req)
 	chk_all_rules(&chkvalue,COOKIE,req);
 
 }
+static void decode_user_agent(char *user_agent,http_waf_msg * req)
+{
+	//printf("user_agent=%s\n",user_agent);
+	chkvalue.data = user_agent;
+	chkvalue.len  = strlen(user_agent);
+	chk_all_rules(&chkvalue,HEADERS,req);
+
+}
+
 
 static void decode_content_len(char *p,http_waf_msg * req)
 {
@@ -1091,7 +1107,7 @@ static void decode_content_type(char *p,http_waf_msg * req)
 		len = strlen(h);
 		if(len<3 || len>70)
 		{
-			req->err_state = HTTP_MSG_ERROR;
+			req->err_state = MSG_ERROR;
 			return;
 
 		}
@@ -1109,6 +1125,7 @@ static http_decode_parser_t httpx_parser[] = {
   {"GET ", decode_uri},
   {"POST ", decode_uri},
   {"Cookie: ", decode_cookie},
+  {"User-Agent: ", decode_user_agent},
   {"Content-Length: ", decode_content_len},
   {"Content-Type: ", decode_content_type},
   
@@ -1129,7 +1146,7 @@ static int check_null_header(http_waf_msg *req)
 		if(p[i] == 0)
 		{
 			p[i] = '0';
-			req->err_state = HTTP_MSG_ERROR;
+			req->err_state = MSG_ERROR;
 			nullbytes ++;
 			
 		}
@@ -1149,7 +1166,10 @@ static void decode_header(http_waf_msg *req)
 	int i,len;
 
 	if(check_null_header(req) > 0 )
+	{
 		printf("error null headers\n");
+		req->err_state = MSG_ERROR;
+	}
 	
 	for (p = strtok(req->buf, "\r\n"); p; p = strtok(NULL, "\r\n"))
   	{
@@ -1160,7 +1180,7 @@ static void decode_header(http_waf_msg *req)
 		    if (!strncasecmp(p, httpx_parser[i].prefix, len))	
 				httpx_parser[i].pars(p+len,req);	
 			//chk_all_rules(&final_data,HEADERS);
-			if(req->rule_id > 100) //matched attack
+			if(req->rule_id > 200) //matched attack
 				return;
 				
       	}
@@ -1205,12 +1225,12 @@ static void process_header(http_waf_msg *req)
 	if(req->mtd != HTTP_MT_GET && req->mtd != HTTP_MT_POST) 
 	{
 		//printf("NOT get or post--------------req->mtd:%d %d %s",req->mtd,len,buf);
-		//req->msg_state = HTTP_MSG_DONE;
+		//req->msg_state = MSG_DONE;
 		return;
 	}	
 	
 	/* decode http get */
-	if(req->msg_state != HTTP_MSG_BODY)
+	if(req->msg_state != MSG_BODY)
 	{
 		end = http_head_end(buf,len);
 		if(end != NULL)
@@ -1223,7 +1243,7 @@ static void process_header(http_waf_msg *req)
 			req->req_hdr_size  = len;
 			req->req_body      = end;
 			req->req_body_size = req->pos - len;		
-
+			req->req_cnt       = 1;	
 			
 			init_http_status(req);
 			decode_header(req);
@@ -1231,17 +1251,17 @@ static void process_header(http_waf_msg *req)
 						
 			
 			if(req->req_body_size >= req->content_len)
-				req->msg_state = HTTP_MSG_DONE;
+				req->msg_state = MSG_DONE;
 			else
-				req->msg_state = HTTP_MSG_BODY;
+				req->msg_state = MSG_BODY;
 
 		
-			if(req->msg_state ==HTTP_MSG_DONE && req->content_len > 0)
+			if(req->msg_state ==MSG_DONE && req->content_len > 0)
 				process_body(req);			
 			
 		}
 		else
-			req->msg_state = HTTP_MSG_RQMETH;			
+			req->msg_state = MSG_RQMETH;			
 	}
 	
 }
@@ -1249,6 +1269,7 @@ static void process_header(http_waf_msg *req)
 
 void init_http_msg(http_waf_msg *req)
 {
+	req->ddos         = 0;
 	req->rule_id      = 0;
 	req->severity     = 0;
 	req->white_url    = 0;
@@ -1270,7 +1291,7 @@ int check_action(http_waf_msg *req)
 	if(req->white_url == 1)
 		return ALLOW;
 
-	if(gvar.err_is_attack == 1 && req->err_state == HTTP_MSG_ERROR)
+	if(gvar.err_is_attack == 1 && req->err_state == MSG_ERROR)
 	{
 		snprintf(http_log_msg,sizeof(http_log_msg)-1,"HTTP PROTOCOL ERROR ,Perhaps  Attack.");			
 		req->log_msg     = http_log_msg;
@@ -1280,7 +1301,7 @@ int check_action(http_waf_msg *req)
 
 	if(gvar.action == ALERT)
 	{
-		if(req->rule_id > 0)
+		if(req->rule_id > 100) //0 -100 reserve for ddos....
 			return ALERT;
 		if(req->black_url == 1)
 			return ALERT;
@@ -1293,7 +1314,7 @@ int check_action(http_waf_msg *req)
 	
 	if(gvar.action == DROP)
 	{
-		if(req->rule_id > 0)
+		if(req->rule_id > 100) //0 -100 reserve for ddos....
 			return DROP;
 		if(req->black_url == 1)
 			return DROP;
@@ -1302,6 +1323,11 @@ int check_action(http_waf_msg *req)
 		
 	}	
 
+	if(req->req_cnt == 1)
+	{
+		req->req_cnt = 0;
+		return REQ_CNT;		
+	}
 	
 	return ALLOW;
 
@@ -1310,12 +1336,12 @@ int check_action(http_waf_msg *req)
 
 int process_http(const char *buf,int len,http_waf_msg *req)
 {
-	
+	//return 0;
 	//printf("len=%d state=%d\n",len,req->msg_state);
 	switch(req->msg_state)
 	{
 		/*first http header msg */
-		case HTTP_MSG_RQBEFORE:
+		case MSG_RQBEFORE:
 			memcpy(req->buf,buf,len);
 			req->file_size += len;
 			req->pos = len;
@@ -1325,7 +1351,7 @@ int process_http(const char *buf,int len,http_waf_msg *req)
 			break;
 
 		/*header data not over*/
-		case HTTP_MSG_RQMETH: 
+		case MSG_RQMETH: 
 			if((req->pos + len) > MAX_HTTP_HEADER_SIZE)
 				return check_action(req);
 			memcpy(req->buf + req->pos,buf,len);
@@ -1334,11 +1360,11 @@ int process_http(const char *buf,int len,http_waf_msg *req)
 			process_header(req);				
 			break;
 		/*body not over*/
-		case HTTP_MSG_BODY: 
+		case MSG_BODY: 
 			req->file_size += len;
 			if(req->file_size >= req->content_len && req->content_len >= MAX_HTTP_HEADER_SIZE)
 			{				
-				req->msg_state = HTTP_MSG_DONE;
+				req->msg_state = MSG_DONE;
 				req->file_size = 0;
 			}
 				
@@ -1355,12 +1381,12 @@ int process_http(const char *buf,int len,http_waf_msg *req)
 			req->req_body_size = req->pos - req->req_hdr_size;
 			if(req->req_body_size >= req->content_len)
 			{
-				req->msg_state = HTTP_MSG_DONE;
+				req->msg_state = MSG_DONE;
 				process_body(req);	
 			}
 			break;	
 		/*keep alive or h2*/
-		case HTTP_MSG_DONE:
+		case MSG_DONE:
 			memcpy(req->buf,buf,len);	
 			req->file_size += len;
 			req->pos = len;

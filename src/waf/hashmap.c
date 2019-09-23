@@ -4,6 +4,7 @@
 #include <string.h> 
 #include <stdlib.h> 
 #include <time.h>
+#include "cc_ddos.h"
 
 
 /*
@@ -155,10 +156,28 @@ void* hashmap_get(Hashmap *h, char *key, char *key_end)
 
 
 
-void hashmap_put_qqkey(Hashmap *h, char *key, char *key_end, 
+void hashmap_put_cckey(Hashmap *h, char *key, char *key_end, 
 		  char *data, char *data_end)
 {
-   return;
+    if (h->used_slots * 2 > table_size[h->table_size_index]) resize_up(h);
+
+    {
+	unsigned int hashval = hash(key, key_end) % table_size[h->table_size_index];
+	int x=hash(key, key_end) % table_size[h->table_size_index];
+	Entry *e = h->table[hashval];
+	size_t keysize = key_end ? (key_end - key) : strlen(key)+1;
+	size_t datasize = data_end ? (data_end - data) : sizeof(ngx_cc_key_t);
+	Entry *n = (Entry *) malloc(sizeof(Entry) + keysize +datasize);
+	char *keyspot = ((char*)n) + (sizeof(Entry));
+	assert(n);
+	
+	n->next_in_bucket = e;
+	h->table[hashval] = n;
+	memcpy(keyspot, key, keysize);
+	n->value = keyspot + keysize;
+	memcpy(n->value, data, datasize);
+	h->used_slots++;
+    }
 }
 
 
