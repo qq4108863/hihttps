@@ -11,17 +11,10 @@
 	    9. 兼容OWASP的ModSecurity正则规则
 	    10.epoll模型单核3万+的HTTPS并发连接
 	    .....
-	  HiHTTPS是免费的，完全可以用于商业网站防御，也可以定制开发更多高级功能，包括：
-	    1. Web管理界面
-	    2. OEM 成硬件部署，保护多台服务器 
-	    3. 云端虚拟化部署，保护多台服务器
-	    4. 更高级有效的防御规则
-	    5. 技术服务和其他需求
-	    ......
-	    (我们最终努力的目标是用人工智能的方法，防止未知漏洞和未知攻击，定制请联系方式QQ/微信:4108863)
+	    (我们专注努力的目标是用各种方法，防止oDAY未知漏洞和未知攻击)
 	    
 二、安装步骤  
-  1. 安装OpenSSL和libpcre开发库
+  1. 安装OpenSSL和libpcre
   CentOS : 
   	yum install openssl openssl-devel
   	yum install -y pcre pcre-devel 
@@ -31,7 +24,7 @@
   	apt-get install libpcre3 libpcre3-dev  
   
   2.编译
-  解压到任意目录，make即可，完成后生成可执行文件hihttps.
+  解压到任意目录，make后生成可执行文件hihttps.
   
   3.规则
   规则放在和hihttps同一级的rules目录即可，注意后缀是.conf或者.rule,更多规则请在
@@ -50,10 +43,10 @@
   或者用WEB漏洞扫描器nikto运行：./nikto  -host ip -ssl -port 443 -C all
   如果产生了报警记录，则代表正常！相关图片在doc目录。
   
-  
-  6.需要更多高级防护和web管理功能，请加QQ/微信:4108863  邮件:4108863@qq.com
-  
-   https://github.com/qq4108863/hihttps
+三、商业版也开源  
+   更多功能如web管理源码、硬件OEM、分布式、高级防御规则等，请访问http://www.hihttps.com/ 获取商业版。 
+   QQ/微信:4108863  邮件:4108863@qq.com
+
   
   
   
