@@ -10,6 +10,7 @@
  * GNU General Public License for more details.
  *
  * For more ,please contact QQ:4108863/wechat:wmkwang/mail:4108863@qq.com
+ * http://www.hihttps.com/
  */
 
 

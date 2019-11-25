@@ -11,7 +11,7 @@
 	    9. 兼容OWASP的ModSecurity正则规则
 	    10.epoll模型单核3万+的HTTPS并发连接
 	    .....
-	    (我们专注努力的目标是用各种方法，防止oDAY未知漏洞和未知攻击)
+	    (我们努力的目标是用人工智能和各种方法，防止oDAY未知漏洞和未知攻击)
 	    
 二、安装步骤  
   1. 安装OpenSSL和libpcre
@@ -43,9 +43,9 @@
   或者用WEB漏洞扫描器nikto运行：./nikto  -host ip -ssl -port 443 -C all
   如果产生了报警记录，则代表正常！相关图片在doc目录。
   
-三、商业版也开源  
-   更多功能如web管理源码、硬件OEM、分布式、高级防御规则等，请访问http://www.hihttps.com/ 获取商业版。 
-   QQ/微信:4108863  邮件:4108863@qq.com
+三、人工智能  
+   AI算法（C语言）请微信关注hihttps或者访问http://www.hihttps.com/  免费获取，
+   QQ/微信:4108863 邮件:4108863@qq.com
 
   
   
