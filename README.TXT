@@ -42,9 +42,12 @@
   rules/main.rule默认加载了一条SQL语句检测规则，可以访问https://ip/select.html?testsql=delete * from test
   或者用WEB漏洞扫描器nikto运行：./nikto  -host ip -ssl -port 443 -C all
   如果产生了报警记录，则代表正常！相关图片在doc目录。
+
+三、WEB管理演示地址
+  静态演示，无实际数据，http://120.79.51.135:8080/  
   
-三、机器学习  
-  机器学习在经过大量项目实战检验后，也会在http://www.hihttps.com/  开源，   QQ/微信:4108863 邮件:4108863@qq.com
+四、机器学习  
+  机器学习在经过大量项目实战检验后，预计2021年在http://www.hihttps.com/ 开源，   QQ/微信:4108863 邮件:4108863@qq.com
 
   
   
