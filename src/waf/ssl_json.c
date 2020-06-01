@@ -38,7 +38,9 @@
 ** To avoid getting DoS'ed, define max depth
 ** for JSON parser, as it is recursive
 */
-#define JSON_MAX_DEPTH 10
+#define             JSON_MAX_DEPTH 8
+static u_char	    *delim = ".\0";
+
 
 
 /*
@@ -51,6 +53,7 @@ typedef struct ngx_http_nx_json_s {
   u_char	c;
   int		depth;
   ngx_str_t	ckey;
+  ngx_str_t name[JSON_MAX_DEPTH];
  
 } ngx_json_t;
 
@@ -59,6 +62,49 @@ ngx_http_nx_json_array(ngx_json_t *js,http_waf_msg *req);
 
 ngx_int_t
 ngx_http_nx_json_obj(ngx_json_t *js,http_waf_msg *req);
+
+
+static void ngx_init_json_name(ngx_json_t *js)
+{
+    int                 i;
+
+    for (i = 0 ; i < JSON_MAX_DEPTH; i++) {        
+        js->name[i].data = delim;
+        js->name[i].len  = 1;
+    }
+
+}
+
+static void ngx_gen_json_name(ngx_json_t *js)
+{
+    int                 i ,len,max_len;
+    u_char              name[256];
+
+    max_len = sizeof(name) - 8;
+    len     = 0;
+
+    for (i = 0 ; i < js->depth; i++) {  
+        
+        if ((len + js->name[i].len) > max_len)
+            break;
+        
+        memcpy(name + len ,js->name[i].data,js->name[i].len);
+        len += js->name[i].len;
+       
+        memcpy(name + len,delim,1);
+        len++;
+        
+        
+    }
+
+    if (len > max_len)
+        return;
+
+    name[len -1] = '\0';
+
+    printf("%d name=%s ",js->depth,name);
+
+}
 
 
 
@@ -127,10 +173,10 @@ ngx_http_nx_json_quoted(ngx_json_t *js, ngx_str_t *ve,http_waf_msg *req)
   ve->data = vn_start;
   ve->len = vn_end - vn_start;
 
-  ve->data[ve->len] = '\0';
-  //printf("json =%s\n",ve->data);
-  chk_all_rules(ve,ARGS,req);
-  chk_all_rules(ve,BODY,req);
+ // ve->data[ve->len] = '\0';
+ // printf("%d json =%.*s\n",js->depth,ve->len,ve->data);
+  //chk_all_rules(ve,ARGS,req);
+  //chk_all_rules(ve,BODY,req);
   return (NGX_OK);
 }
 
@@ -155,8 +201,8 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
     if (ret == NGX_OK)
       {
 	/* parse extracted values. */
-	  
-	  //printf("jsonstr val=%s\n",val.data);
+	  ngx_gen_json_name(js);
+	  printf("%d  val =%.*s\n",js->depth,val.len,val.data);
 	
       }
     return (ret);
@@ -173,7 +219,8 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
 
 	//val.data[val.len] = '\0';
 	//js->off++;
-  	//printf("jsonint val=%s\n",val.data);
+	ngx_gen_json_name(js);
+  	printf("  num val=%.*s\n",val.len,val.data);
     
     return (NGX_OK);
   }
@@ -194,7 +241,8 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
     /* parse extracted values. */
 	//val.data[val.len] = '\0';
 	//js->off++;
-  	//printf("json bool val =%s\n",val.data);
+	ngx_gen_json_name(js);
+  	printf("  bool val=%.*s\n",val.len,val.data);
    
     return (NGX_OK);
   }
@@ -233,9 +281,13 @@ ngx_http_nx_json_array(ngx_json_t *js,http_waf_msg *req) {
   ngx_int_t	rc;
   
   js->c = *(js->src + js->off);
-  if (js->c != '[' || js->depth > JSON_MAX_DEPTH)
+  if (js->c != '[' || js->depth >= JSON_MAX_DEPTH)
     return (NGX_ERROR);
   js->off++;
+  js->depth++; //add by wmk 20191218 ,fixed bug
+  js->name[js->depth - 1].data =  delim;
+  js->name[js->depth - 1].len  =  1;
+      
   do {
     rc = ngx_http_nx_json_val(js,req);
     /* if we cannot extract the value, 
@@ -250,6 +302,9 @@ ngx_http_nx_json_array(ngx_json_t *js,http_waf_msg *req) {
   } while (rc == NGX_OK);
   if (js->c != ']')
     return (NGX_ERROR);
+
+  js->depth--;//add by wmk 20191218 ,fixed bug
+  
   return (NGX_OK);
 }
 
@@ -261,16 +316,18 @@ ngx_http_nx_json_obj(ngx_json_t *js,http_waf_msg *req)
 {
   js->c = *(js->src + js->off);
   
-  if (js->c != '{' || js->depth > JSON_MAX_DEPTH)
+  if (js->c != '{' || js->depth >= JSON_MAX_DEPTH)
     return (NGX_ERROR);
   js->off++;
+  js->depth++; // add by wmk 20191218 ,fixed bug 
+
 
   do {
     ngx_http_nx_json_forward(js);//printf("json 2.....%d.........%d.......%d\n",js->len,js->off,js->c);
     /* check subs (arrays, objects) */
     switch (js->c) {
     case '[': /* array */
-      js->depth++;
+     // js->depth++; 
       ngx_http_nx_json_array(js,req);
       if (ngx_http_nx_json_seek(js, ']'))
 	return (NGX_ERROR);
@@ -278,7 +335,7 @@ ngx_http_nx_json_obj(ngx_json_t *js,http_waf_msg *req)
       js->depth--;
       break;
     case '{': /* sub-object */
-      js->depth++;
+     // js->depth++;
       ngx_http_nx_json_obj(js,req);
       if (js->c != '}')
 	return (NGX_ERROR);
@@ -287,7 +344,15 @@ ngx_http_nx_json_obj(ngx_json_t *js,http_waf_msg *req)
       break;
     case '"': /* key : value, extract and parse. */
       if (ngx_http_nx_json_quoted(js, &(js->ckey),req) != NGX_OK)
-	return (NGX_ERROR);
+	       return (NGX_ERROR);
+     // printf("%d json name =%.*s\n",js->depth,js->ckey.len,js->ckey.data);
+      if (js->depth <= 0 || js->depth > JSON_MAX_DEPTH)
+           return (NGX_ERROR);
+      js->name[js->depth - 1].data =  js->ckey.data;
+      js->name[js->depth - 1].len  =  js->ckey.len;
+      //ngx_gen_json_name(js);
+      
+      
       if (ngx_http_nx_json_seek(js, ':'))
 	return (NGX_ERROR);
       js->off++;
@@ -328,6 +393,7 @@ ngx_http_dummy_json_parse(	  char  	 *src,	  int len,http_waf_msg *req)
 
 	
     memset(&js,0,sizeof(ngx_json_t));
+    ngx_init_json_name(&js);
 	js.json.data = js.src = src;
 	js.json.len  = js.len = len ;
 	

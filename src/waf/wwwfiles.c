@@ -18,7 +18,7 @@
 #include "hashmap.h"
 #include "httpx.h"
 
-Hashmap hash_files,hash_white_url,hash_black_url;
+Hashmap hash_white_url,hash_black_url;
 static int if_find = 1;
 
 #define BLACK_RULEID 101
@@ -120,64 +120,11 @@ void read_black_url(char *dir)
 
 }
 
-
-
-
-int read_file_list(char *basePath,int len)
-{
-    DIR *dir;
-    struct dirent *ptr;
-    char base[1024],filename[1024];
-	int i;
-
-    if ((dir=opendir(basePath)) == NULL)
-    {
-        perror("Open dir error...");
-        return 0;
-    }
-
-    while ((ptr=readdir(dir)) != NULL)
-    {
-        if(strcmp(ptr->d_name,".")==0 || strcmp(ptr->d_name,"..")==0)    ///current dir OR parrent dir
-            continue;
-        else if(ptr->d_type == 8)    ///file
-        {
-          
-			 snprintf(filename,1000,"%s/%s",basePath + len,ptr->d_name);
-			 //printf("		%s\n",filename);
-			 
-			 for (i = 0; i < strlen(filename); i++)
-    			filename[i] = tolower(filename[i]);			
-			 hashmap_put(&hash_files, filename, 0,filename, 0);
-			
-        }
-        else if(ptr->d_type == 10)    ///link file
-            printf("link file d_name:%s%s\n",basePath,ptr->d_name);
-        else if(ptr->d_type == 4)    ///dir
-        {
-            memset(base,'\0',sizeof(base));
-            strcpy(base,basePath);
-            strcat(base,"/");
-            strcat(base,ptr->d_name);
-			//printf("	%s\n",base + len);			
-            read_file_list(base,len);
-			
-			for (i = 0; i < strlen(base); i++)
-    			base[i] = tolower(base[i]);
-			hashmap_put(&hash_files, base + len, 0,base + len, 0);
-			strcat(base,"/");
-			hashmap_put(&hash_files, base + len, 0,base + len, 0);
-        }
-    }
-    closedir(dir);
-    return 1;
-}
-
 int find_white_url(char *url,http_waf_msg *req)
 {
 	if(hashmap_get(&hash_white_url,url,0))
 	{
-		//printf("find_white_url =%s\n",url);
+		
 		req->white_url = 1;
 		return 1;
 	}
@@ -196,7 +143,7 @@ int find_black_url(char *url,http_waf_msg *req)
 		req->black_url = 1;
 		req->log_msg     = http_log_msg;
 		req->rule_id     = BLACK_RULEID;
-		//printf("%s find_black_url =%s\n",req->log_msg,url);
+		
 		return 1;
 	}
 
@@ -208,37 +155,25 @@ int find_black_url(char *url,http_waf_msg *req)
 int find_www_file(char *filename,http_waf_msg *req)
 {
 	if(1 == find_white_url(filename,req))
-		return 0;
-	if(1 == find_black_url(filename,req))
-		return 0;
-
-	if(if_find == 0)
-		return 0;
-	if(!hashmap_get(&hash_files,filename,0))
-	{
-		
-		snprintf(http_log_msg,sizeof(http_log_msg)-1,"URL file not exist in www dir.");
-		req->no_www_file = 1;
-		req->log_msg     = http_log_msg;
-		req->rule_id     = NO_WWWFILE_RULEID;
 		return 1;
-	}
+	if(1 == find_black_url(filename,req))
+		return 1;
 
 
 	return 0;
 }
 
 	
-void read_www_files(char *dir)
+void read_www_files(char *dirname)
 {
-	int len;
-	char *p;
+	int len = 0 ,off = 0;
+	char *p,*dir;
 
 	hashmap_open(&hash_white_url, 509);
 	hashmap_open(&hash_black_url, 509);
-	hashmap_open(&hash_files, 65521);	
-	hashmap_put(&hash_files, "/", 0,"/", 0);
-	
+
+
+    dir = dirname;
 
 	if(dir == NULL)
 	{
@@ -247,17 +182,11 @@ void read_www_files(char *dir)
 	}
 	
 	len = strlen(dir);
-	p = dir + len -1;
-	
-	if(*p == '\\')
-		*p = '\0';
-	
-	if(*p  == '/')
-		*p = '\0';
-	
-	read_file_list(dir,len);
-	printf("DIR %s,Total file numbers =%d\n",dir,((Hashmap *)&hash_files)->used_slots);
-	//hashmap_dump(&hash_files);
+
+    if (len < 2)
+        return;
+
+  
 	
 	
 }

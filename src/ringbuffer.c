@@ -24,36 +24,36 @@
 void
 ringbuffer_init(ringbuffer *rb, int num_slots, int data_len)
 {
-	rb->num_slots = num_slots ?: DEF_RING_SLOTS;
-	rb->data_len = data_len ?: DEF_RING_DATA_LEN;
-	rb->slots = malloc(rb->num_slots * sizeof(rb->slots[0]));
-	AN(rb->slots);
+    rb->num_slots = num_slots ?: DEF_RING_SLOTS;
+    rb->data_len = data_len ?: DEF_RING_DATA_LEN;
+    rb->slots = malloc(rb->num_slots * sizeof(rb->slots[0]));
+    AN(rb->slots);
 
-	rb->buf = malloc(rb->data_len+1);
-	AN(rb->buf);
+    rb->buf = malloc(rb->data_len+1);
+    AN(rb->buf);
 
-	rb->head = &rb->slots[0];
-	rb->tail = &rb->slots[0];
-	int x;
-	for (x=0; x < rb->num_slots; x++) {
-		rb->slots[x].next = &(rb->slots[(x + 1) % rb->num_slots]);
-		rb->slots[x].data = malloc(rb->data_len);
-		AN(rb->slots[x].data);
-	}
-	rb->used = 0;
-	rb->bytes_written = 0;
+    rb->head = &rb->slots[0];
+    rb->tail = &rb->slots[0];
+    int x;
+    for (x=0; x < rb->num_slots; x++) {
+        rb->slots[x].next = &(rb->slots[(x + 1) % rb->num_slots]);
+        rb->slots[x].data = malloc(rb->data_len);
+        AN(rb->slots[x].data);
+    }
+    rb->used = 0;
+    rb->bytes_written = 0;
 }
 
 void
 ringbuffer_cleanup(ringbuffer *rb)
 {
-	int x;
-	for (x=0; x < rb->num_slots; x++) {
-		free(rb->slots[x].data);
-	}
-	free(rb->buf);
-	free(rb->slots);
-	
+    int x;
+    for (x=0; x < rb->num_slots; x++) {
+        free(rb->slots[x].data);
+    }
+    free(rb->buf);
+    free(rb->slots);
+    
 }
 
 /** READ FUNCTIONS **/
@@ -62,27 +62,27 @@ ringbuffer_cleanup(ringbuffer *rb)
 char *
 ringbuffer_read_next(ringbuffer *rb, int * length)
 {
-	assert(rb->used);
-	*length = rb->head->left;
-	return rb->head->ptr;
+    assert(rb->used);
+    *length = rb->head->left;
+    return rb->head->ptr;
 }
 
 /* Mark consumption of only part of the read head buffer */
 void
 ringbuffer_read_skip(ringbuffer *rb, int length)
 {
-	assert(rb->used);
-	rb->head->ptr += length;
-	rb->head->left -= length;
+    assert(rb->used);
+    rb->head->ptr += length;
+    rb->head->left -= length;
 }
 
 /* Pop a consumed (fully read) head from the buffer */
 void
 ringbuffer_read_pop(ringbuffer *rb)
 {
-	assert(rb->used);
-	rb->head = rb->head->next;
-	rb->used--;
+    assert(rb->used);
+    rb->head = rb->head->next;
+    rb->used--;
 }
 
 
@@ -92,8 +92,8 @@ ringbuffer_read_pop(ringbuffer *rb)
 char *
 ringbuffer_write_ptr(ringbuffer *rb)
 {
-	assert(rb->used < rb->num_slots);
-	return rb->tail->data;
+    assert(rb->used < rb->num_slots);
+    return rb->tail->data;
 }
 
 /* Mark the tail appended for `length` bytes, and move the cursor
@@ -101,13 +101,13 @@ ringbuffer_write_ptr(ringbuffer *rb)
 void
 ringbuffer_write_append(ringbuffer *rb, int length)
 {
-	assert(rb->used < rb->num_slots);
+    assert(rb->used < rb->num_slots);
 
-	rb->used++;
+    rb->used++;
 
-	rb->tail->ptr = rb->tail->data;
-	rb->tail->left = length;
-	rb->tail = rb->tail->next;
+    rb->tail->ptr = rb->tail->data;
+    rb->tail->left = length;
+    rb->tail = rb->tail->next;
 }
 
 /** RING STATE FUNCTIONS **/

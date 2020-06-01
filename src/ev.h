@@ -279,19 +279,19 @@ enum {
 #endif
 
 /* shared by all watchers */
-#define EV_WATCHER(type)			\
-  int active; /* private */			\
-  int pending; /* private */			\
-  EV_DECL_PRIORITY /* private */		\
-  EV_COMMON /* rw */				\
+#define EV_WATCHER(type)            \
+  int active; /* private */            \
+  int pending; /* private */            \
+  EV_DECL_PRIORITY /* private */        \
+  EV_COMMON /* rw */                \
   EV_CB_DECLARE (type) /* private */
 
-#define EV_WATCHER_LIST(type)			\
-  EV_WATCHER (type)				\
+#define EV_WATCHER_LIST(type)            \
+  EV_WATCHER (type)                \
   struct ev_watcher_list *next; /* private */
 
-#define EV_WATCHER_TIME(type)			\
-  EV_WATCHER (type)				\
+#define EV_WATCHER_TIME(type)            \
+  EV_WATCHER (type)                \
   ev_tstamp at;     /* private */
 
 /* base class, nothing to see here unless you subclass */
@@ -683,11 +683,11 @@ EV_API_DECL void ev_resume  (EV_P) EV_THROW;
 
 /* these may evaluate ev multiple times, and the other arguments at most once */
 /* either use ev_init + ev_TYPE_set, or the ev_TYPE_init macro, below, to first initialise a watcher */
-#define ev_init(ev,cb_) do {			\
-  ((ev_watcher *)(void *)(ev))->active  =	\
-  ((ev_watcher *)(void *)(ev))->pending = 0;	\
-  ev_set_priority ((ev), 0);			\
-  ev_set_cb ((ev), cb_);			\
+#define ev_init(ev,cb_) do {            \
+  ((ev_watcher *)(void *)(ev))->active  =    \
+  ((ev_watcher *)(void *)(ev))->pending = 0;    \
+  ev_set_priority ((ev), 0);            \
+  ev_set_cb ((ev), cb_);            \
 } while (0)
 
 #define ev_io_set(ev,fd_,events_)            do { (ev)->fd = (fd_); (ev)->events = (events_) | EV__IOFDSET; } while (0)

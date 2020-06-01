@@ -48,16 +48,16 @@ typedef struct shcupd_peer_opt {
 #endif
 
 typedef enum {
-	SSLv3_PROTO	= 0x01,
-	TLSv1_0_PROTO	= 0x02,
-	TLSv1_1_PROTO	= 0x04,
-	TLSv1_2_PROTO	= 0x08,
-	TLSv1_3_PROTO	= 0x10
+    SSLv3_PROTO    = 0x01,
+    TLSv1_0_PROTO    = 0x02,
+    TLSv1_1_PROTO    = 0x04,
+    TLSv1_2_PROTO    = 0x08,
+    TLSv1_3_PROTO    = 0x10
 } TLS_PROTOCOL;
 
 #define DEFAULT_TLS_PROTOS (TLSv1_2_PROTO | TLSv1_3_PROTO)
 #define TLS_OPTION_PROTOS \
-	(TLSv1_0_PROTO | TLSv1_1_PROTO | DEFAULT_TLS_PROTOS)
+    (TLSv1_0_PROTO | TLSv1_1_PROTO | DEFAULT_TLS_PROTOS)
 #define SSL_OPTION_PROTOS (SSLv3_PROTO | TLS_OPTION_PROTOS)
 
 typedef enum {
@@ -66,32 +66,32 @@ typedef enum {
 } PROXY_MODE;
 
 struct cfg_cert_file {
-	unsigned	magic;
+    unsigned    magic;
 #define CFG_CERT_FILE_MAGIC 0x58c280d2
-	char 		*filename;
-	char		*priv_key_filename;
-	char		*ocspfn;
-	double		ocsp_mtim;
-	int		mark;
-	int		ocsp_vfy;
-	double		mtim;
-	UT_hash_handle	hh;
+    char         *filename;
+    char        *priv_key_filename;
+    char        *ocspfn;
+    double        ocsp_mtim;
+    int        mark;
+    int        ocsp_vfy;
+    double        mtim;
+    UT_hash_handle    hh;
 };
 
 struct front_arg {
-	unsigned		magic;
-#define FRONT_ARG_MAGIC		0x07a16cb5
-	char			*ip;
-	char			*port;
-	struct cfg_cert_file	*certs;
-	char			*pspec;
-	int			match_global_certs;
-	int			sni_nomatch_abort;
-	int			prefer_server_ciphers;
-	char			*ciphers;
-	int			selected_protos;
-	int			mark;
-	UT_hash_handle		hh;
+    unsigned        magic;
+#define FRONT_ARG_MAGIC        0x07a16cb5
+    char            *ip;
+    char            *port;
+    struct cfg_cert_file    *certs;
+    char            *pspec;
+    int            match_global_certs;
+    int            sni_nomatch_abort;
+    int            prefer_server_ciphers;
+    char            *ciphers;
+    int            selected_protos;
+    int            mark;
+    UT_hash_handle        hh;
 };
 
 /* configuration structure */

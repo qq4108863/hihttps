@@ -25,6 +25,9 @@
 #include <unistd.h>
 #include <limits.h>
 #include <stdio.h>
+#include <math.h>
+
+
 
 
 
@@ -34,16 +37,27 @@
 #include "wwwfiles.h"
 #include "ssl_utils.h"
 #include "ssl_json.h"
+#include "../machine-learning/machine-learning.h"
+#include "../machine-learning/simhash.h"
+
+
+
 
 #undef _GNU_SOURCE
 
 
+static long long max_size = 256;         // max length of strings
+static long long N = 3;                  // number of closest words that will be shown
+static long long max_w = 50;              // max length of vocabulary entries
+
+
+#ifdef USE_SIMHASH
+char sim_url[2048];
+#endif
 
 
 
-
-
-
+//static unsigned char htx_tmp[1024*32];
 ngx_str_t chkvalue;
 
 
@@ -51,7 +65,7 @@ ngx_str_t chkvalue;
 ** Structures related to the decode parser
 */
 typedef struct  {
-  char	*prefix;
+  char    *prefix;
   void   (*pars)(char *, http_waf_msg *);
 } http_decode_parser_t;
 
@@ -296,7 +310,7 @@ static http_ver http_req_version(const char *line, int len)
 static http_mthd http_req_method(const char *data, int linelen)
 {
     const char *ptr;
-    int	index = 0;
+    int    index = 0;
     //char *unkn;
 
     /*
@@ -314,10 +328,10 @@ static http_mthd http_req_method(const char *data, int linelen)
     
     /*
      * From draft-cohen-gena-client-01.txt, available from the uPnP forum:
-     *	NOTIFY, SUBSCRIBE, UNSUBSCRIBE
+     *    NOTIFY, SUBSCRIBE, UNSUBSCRIBE
      *
      * From draft-ietf-dasl-protocol-00.txt, a now vanished Microsoft draft:
-     *	SEARCH
+     *    SEARCH
      */
     ptr = (const char *)data;
     /* Look for the space following the Method */
@@ -514,7 +528,7 @@ static http_mthd http_req_method(const char *data, int linelen)
         break;
     }
 
-	/*
+    /*
     if (index > 0 && !test) {
         unkn = DMemMalloc(index+1);
         memcpy(unkn, data, index);
@@ -577,10 +591,10 @@ ngx_atoof(char *line, size_t n)
     return value;
 }
 
-static char	*
+static char    *
 strnchr(const char *s, int c, int len)
 {
-  int	cpt;
+  int    cpt;
   for (cpt = 0; cpt < len && s[cpt]; cpt++)
     if (s[cpt] == c) 
       return ((char *) s+cpt);
@@ -589,17 +603,37 @@ strnchr(const char *s, int c, int len)
 
 
 
+static size_t
+parse_number(ngx_str_t * sf)
+{
+  
+    const char *cs = sf->data;
+    const size_t slen = sf->len;
+    size_t pos = 0;
+ 
 
 
-				
+    while (pos < slen && ISDIGIT(cs[pos])) {
+        pos += 1;
+    }
+
+    if (pos == slen) {        
+        return 1;  
+     }
+    else
+        return 0;
+}
+
+
+                
 
 
 /*
 ** does : parse body data, a.k.a POST/PUT datas. identifies content-type,
-**	  and, if appropriate, boundary. then parse the stuff if multipart/for..
-**	  or rely on spliturl if application/x-w..
+**      and, if appropriate, boundary. then parse the stuff if multipart/for..
+**      or rely on spliturl if application/x-w..
 ** this function sucks ! I don't parse bigger-than-body-size posts that 
-**	   are partially stored in files, TODO ;)
+**       are partially stored in files, TODO ;)
 */
 
 /*
@@ -607,8 +641,8 @@ strnchr(const char *s, int c, int len)
 */
 int
 nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
-			     unsigned char **fvarn_start, unsigned char **fvarn_end,
-			     unsigned char **ffilen_start, unsigned char **ffilen_end) 
+                 unsigned char **fvarn_start, unsigned char **fvarn_end,
+                 unsigned char **ffilen_start, unsigned char **ffilen_end) 
 {
   
   unsigned char *varn_start = NULL, *varn_end = NULL;
@@ -639,43 +673,43 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
     if (!ngx_strncmp(str, "name=\"", 6)) {
       /* we already successfully parsed a name, reject that. */
       if (varn_end || varn_start)
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       varn_end = varn_start = str + 6;
       do {
-	varn_end = (unsigned char *) ngx_strchr(varn_end, '"');
-	if (!varn_end || (varn_end && *(varn_end - 1) != '\\'))
-	  break;
-	varn_end++;
+    varn_end = (unsigned char *) ngx_strchr(varn_end, '"');
+    if (!varn_end || (varn_end && *(varn_end - 1) != '\\'))
+      break;
+    varn_end++;
       } while (varn_end && varn_end < line_end);
       if (!varn_end   || !*varn_end)
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       str = varn_end;
       if (str < line_end+1)
-	str++;
+    str++;
       else
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       *fvarn_start = varn_start;
       *fvarn_end = varn_end;
     }
     else if (!ngx_strncmp(str, "filename=\"", 10)) {
       /* we already successfully parsed a filename, reject that. */
       if (filen_end || filen_start)
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       filen_end = filen_start = str + 10;
       do {
-	filen_end = (unsigned char *) ngx_strchr(filen_end, '"');
-	if (!filen_end) break;
-	if (filen_end && *(filen_end - 1) != '\\')
-	  break;
-	filen_end++;
+    filen_end = (unsigned char *) ngx_strchr(filen_end, '"');
+    if (!filen_end) break;
+    if (filen_end && *(filen_end - 1) != '\\')
+      break;
+    filen_end++;
       } while (filen_end && filen_end < line_end);
       if (!filen_end)
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       str = filen_end;
       if (str < line_end+1)
-	str++;
+    str++;
       else
-	return (NGX_ERROR);
+    return (NGX_ERROR);
       *ffilen_end = filen_end;
       *ffilen_start = filen_start;
     }
@@ -684,7 +718,7 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
     else {
       /* gargabe is present ?
       NX_DEBUG(_debug_post_heavy,     NGX_LOG_DEBUG_HTTP, r->connection->log, 0, 
-		    "extra data in content-disposition ? end:%p, str:%p, diff=%d", line_end, str, line_end-str);*/
+            "extra data in content-disposition ? end:%p, str:%p, diff=%d", line_end, str, line_end-str);*/
 
       return (NGX_ERROR);
     }
@@ -697,427 +731,567 @@ nx_content_disposition_parse(unsigned char *str, unsigned char *line_end,
 
 
 
-static void split_args(char *args,http_waf_msg *req)
+                 
+static int chk_word2vec_dim(ngx_str_t *name,char *vocab ,int words)
+{
+  char st1[max_size],  st[100][max_size];
+  long long a, b, c,  cn;
+            
+                    
+ if(name->len >= max_size) 
+    return 0;
+ 
+ sprintf(st1,name->data);
+
+
+  a = 0;
+  a = strlen(st1);
+
+
+    cn = 0;
+    b = 0;
+    c = 0;
+    while (1) {
+      st[cn][b] = st1[c];
+      b++;
+      c++;
+      st[cn][b] = 0;
+      if (st1[c] == 0) break;
+      if (st1[c] == ' ') {
+        cn++;
+        b = 0;
+        c++;
+      }
+    }
+    cn++;
+
+    for (a = 0; a < cn; a++) {
+      for (b = 0; b < words; b++) {
+        if (!strcmp(vocab + b * max_w, st[a])) break;
+      }
+      if (b == words) b = -1;
+      //bi[a] = b;
+    
+      if (b == -1) {    
+        return 1;
+        break;
+      }
+    }
+    
+   
+    
+    return 0;
+
+}            
+static void chk_gan_arg_rules(ngx_str_t *name,ngx_str_t *value,http_waf_msg *req,ngx_cached_open_file_t *file,int count)
+{
+     ngx_list_t                 *r;
+     int                     ret = 0;
+
+     if (file == NULL)
+        return;
+
+     if (file->vocab != NULL && file->words > 0) {
+         if (1 == chk_word2vec_dim(name,file->vocab,file->words)) {
+              snprintf(http_log_msg,sizeof(http_log_msg)-1,"Machine Learning : args name error..");
+              req->str_matched = name->data;
+              req->log_msg     = http_log_msg;   
+              req->rule_id  = MACHINE_LEANRING_RULE_ID;
+              
+              return;
+            }
+
+     }
+
+     if (count > file->uri_rule.mean && fabs(file->uri_rule.mean - count) > 4*file->uri_rule.sigma) {          
+          snprintf(http_log_msg,sizeof(http_log_msg)-1,"Machine Learning : Too many args...");
+          req->str_matched = value->data;
+          req->log_msg     = http_log_msg;   
+          req->rule_id  = MACHINE_LEANRING_RULE_ID;
+          
+          return;
+     }
+        
+
+     r = file->args_rule;
+     
+     while (r != NULL) {       
+       if (r->data &&  0 == ngx_strcmp(r->data, name->data)) {
+          // printf("chk gan arg_rule:%s %d,mean=%g sigma=%g  x=%g\n",value->data,value->len,r->mean,r->sigma,fabs(r->mean - value->len));
+           if (fabs(r->mean - value->len) > 4*r->sigma) {
+               snprintf(http_log_msg,sizeof(http_log_msg)-1,"Machine Learning : Detect an attack...");
+               req->str_matched  = value->data;
+               req->log_msg      = http_log_msg;
+               req->rule_id      = MACHINE_LEANRING_RULE_ID;
+               return;
+           }
+
+           if (r->is_number) {
+                ret = parse_number(value);
+                if (!ret) {
+                    snprintf(http_log_msg,sizeof(http_log_msg)-1,"Machine Learning : Detect an attack,value is not a number...");
+                    req->str_matched = value->data;
+                    req->log_msg     = http_log_msg;
+                    req->rule_id     = MACHINE_LEANRING_RULE_ID;
+                    return;
+                
+                }
+
+            }
+            
+           
+           break;
+       }
+      
+       r = r->next;
+    }
+
+     
+
+}
+
+static void split_args(char *args,http_waf_msg *req,ngx_cached_open_file_t *file)
 {
 
-	ngx_str_t	name, val;
-    char		*eq, *ev, *orig,*str;
-	int		len, full_len;
-	int nullbytes = 0;
+    ngx_str_t    name, val;
+    char        *eq, *ev, *orig,*str;
+    int            len, full_len;
+    int         nullbytes = 0,count = 0;
 
-	str = args;
-	orig = str;
+    str = args;
+    orig = str;
     full_len = strlen(orig);
-	while (str < (orig+full_len) && *str) 
-	{
-	    if (*str == '&') {			
-	      str++;
-	      continue;
-	    }
-		eq = strchr(str, '=');
-    	ev = strchr(str, '&');
-		
-		if ((!eq && !ev) /*?foobar */ ||	(eq && ev && eq > ev)) /*?foobar&bla=test*/ 
-		{		
-		      if (!ev)
-			  	ev = str+strlen(str);
-		      /* len is now [name] */
-		      len = ev - str;
-		      val.data = (unsigned char *) str;
-		      val.len = ev - str;
-		      name.data = (unsigned char *) NULL;
-		      name.len = 0;
-    	}
-		 /* ?&&val | ?var&& | ?val& | ?&val | ?val&var */
-	    else if (!eq && ev) 
-		{ 
-	     
-		      if (ev > str) /* ?var& | ?var&val */ 
-			  {
-				val.data = (unsigned char *) str;
-				val.len = ev - str;
-				name.data = (unsigned char *) NULL;
-				name.len = 0;
-				len = ev - str;
-			  }
-			  else /* ?& | ?&&val */ 
-			  {
-				val.data = name.data = NULL;
-				val.len = name.len = 0;
-				len = 1;
-		      }
-	    }
-		else /* should be normal like ?var=bar& ..*/ 
-		{
-		      if (!ev) /* ?bar=lol */
-			  	ev = str+strlen(str);
-		      /* len is now [name]=[content] */
-		      len = ev - str;
-		      eq = strnchr(str, '=', len);
-		      if (!eq) /*malformed url, possible attack*/
-			  {	
-				return ;
-		      }
-		      eq++;
-		      val.data = (unsigned char *) eq;
-		      val.len = ev - eq;
-		      name.data = (unsigned char *) str;
-		      name.len = eq - str - 1;
-    	}
+    while (str < (orig+full_len) && *str) 
+    {
+        if (*str == '&') {            
+          str++;
+          continue;
+        }
+        eq = strchr(str, '=');
+        ev = strchr(str, '&');
+        
+        if ((!eq && !ev) /*?foobar */ ||    (eq && ev && eq > ev)) /*?foobar&bla=test*/ 
+        {        
+              if (!ev)
+                  ev = str+strlen(str);
+              /* len is now [name] */
+              len = ev - str;
+              val.data = (unsigned char *) str;
+              val.len = ev - str;
+              name.data = (unsigned char *) NULL;
+              name.len = 0;
+        }
+         /* ?&&val | ?var&& | ?val& | ?&val | ?val&var */
+        else if (!eq && ev) 
+        { 
+         
+              if (ev > str) /* ?var& | ?var&val */ 
+              {
+                val.data = (unsigned char *) str;
+                val.len = ev - str;
+                name.data = (unsigned char *) NULL;
+                name.len = 0;
+                len = ev - str;
+              }
+              else /* ?& | ?&&val */ 
+              {
+                val.data = name.data = NULL;
+                val.len = name.len = 0;
+                len = 1;
+              }
+        }
+        else /* should be normal like ?var=bar& ..*/ 
+        {
+              if (!ev) /* ?bar=lol */
+                  ev = str+strlen(str);
+              /* len is now [name]=[content] */
+              len = ev - str;
+              eq = strnchr(str, '=', len);
+              if (!eq) /*malformed url, possible attack*/
+              {    
+                return ;
+              }
+              eq++;
+              val.data = (unsigned char *) eq;
+              val.len = ev - eq;
+              name.data = (unsigned char *) str;
+              name.len = eq - str - 1;
+        }
 
-		if (name.len) 
-		{
-      		nullbytes = naxsi_unescape(&name);
-      		name.data[name.len] = '\0';
-      		//printf("%d		name=%.32s						",name.len,name.data);
-		}
-		if (val.len) 
-		{
-      		nullbytes = naxsi_unescape(&val);
-      		val.data[val.len] = '\0';
-			chk_all_rules(&val,ARGS,req);
-      		//printf("%d		value=%.32s \n",val.len,val.data);
-		}
-      	//printf("\n");
+        if(name.len && val.len && file) {
+             name.data[name.len] = '\0';
+             val.data[val.len]   = '\0';
+             count++;
+             chk_gan_arg_rules(&name,&val,req,file,count);
+             if (req->rule_id == MACHINE_LEANRING_RULE_ID)
+                return;
 
-		str += len; 
-		str++;
+        }
 
-		
-	}
-	
-	
+        if (name.len) 
+        {
+              nullbytes = naxsi_unescape(&name);
+              name.data[name.len] = '\0';
+              
+        }
+        if (val.len) 
+        {
+              nullbytes = naxsi_unescape(&val);
+              val.data[val.len] = '\0';
+            chk_all_rules(&val,ARGS,req);
+            
+            #ifdef USE_SIMHASH
+            check_simhash(val.data,sim_url,req);
+            #endif
+
+        }
+          //printf("\n");
+
+        str += len; 
+        str++;
+
+        
+    }
+    
+    
 }
 
 static void multipart_parse(u_char *src,http_waf_msg * req)
 {
-    ngx_str_t			final_var, final_data;
-	u_char				 *boundary,*varn_start, *varn_end;
-	u_char				*filen_start, *filen_end;
-	u_char				*end, *line_end;
-	u_int 			    len,boundary_len,varn_len, varc_len, idx, nullbytes;
+    ngx_str_t            final_var, final_data;
+    u_char                 *boundary,*varn_start, *varn_end;
+    u_char                *filen_start, *filen_end;
+    u_char                *end, *line_end;
+    u_int                 len,boundary_len,varn_len, varc_len, idx, nullbytes;
 
-	idx = 0;
-	len = req->req_body_size;
-	boundary_len = req->boundary_len;
-	boundary = req->boundary;
+    idx = 0;
+    len = req->req_body_size;
+    boundary_len = req->boundary_len;
+    boundary = req->boundary;
 
-	if(boundary_len < 3 || boundary == NULL)
-		return;
-	
-	while (idx < len) 
-	{
-		 /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'$END */
-   		 /* Authorize requests that don't have the leading \r\n */
-	    if (idx+boundary_len+6 == len || idx+boundary_len+4 == len) 
-		{
-	      if (ngx_strncmp(src+idx, "--", 2) ||
-			  ngx_strncmp(src+idx+2, boundary, boundary_len) ||
-			  ngx_strncmp(src+idx+boundary_len+2, "--", 2)) 
-		  {
-			/* bad closing boundary ?*/
-			
-			req->err_state = MSG_ERROR;
-			return ;
-	      } 
-		  else
-				break;
-	    }
+    if(boundary_len < 3 || boundary == NULL)
+        return;
+    
+    while (idx < len) 
+    {
+         /* if we've reached the last boundary '--' + boundary + '--' + '\r\n'$END */
+            /* Authorize requests that don't have the leading \r\n */
+        if (idx+boundary_len+6 == len || idx+boundary_len+4 == len) 
+        {
+          if (ngx_strncmp(src+idx, "--", 2) ||
+              ngx_strncmp(src+idx+2, boundary, boundary_len) ||
+              ngx_strncmp(src+idx+boundary_len+2, "--", 2)) 
+          {
+            /* bad closing boundary ?*/
+            
+            req->err_state = MSG_ERROR;
+            return ;
+          } 
+          else
+                break;
+        }
 
-		 /* --boundary\r\n : New var */
-	    if ((len - idx < 4 + boundary_len) || src[idx] != '-' || src[idx+1] != '-' || 
-			/* and if it's really followed by a boundary */
-			ngx_strncmp(src+idx+2, boundary, boundary_len) || 
-			/* and if it's not the last boundary of the buffer */
-			idx+boundary_len + 2 + 2  >= len ||  
-			/* and if it's followed by \r\n */
-			src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') 
-		{
-		    /* bad boundary */
-			//printf("!!!!!!! boundary over-------------%x %x---------%d    %s\n",src[idx+boundary_len+2],src[idx+boundary_len+3],len - idx,src+idx+2);
-		    req->err_state = MSG_ERROR;
-		    return ;
-	    }
+         /* --boundary\r\n : New var */
+        if ((len - idx < 4 + boundary_len) || src[idx] != '-' || src[idx+1] != '-' || 
+            /* and if it's really followed by a boundary */
+            ngx_strncmp(src+idx+2, boundary, boundary_len) || 
+            /* and if it's not the last boundary of the buffer */
+            idx+boundary_len + 2 + 2  >= len ||  
+            /* and if it's followed by \r\n */
+            src[idx+boundary_len+2] != '\r' || src[idx+boundary_len+3] != '\n') 
+        {
+            /* bad boundary */
+            //printf("!!!!!!! boundary over-------------%x %x---------%d    %s\n",src[idx+boundary_len+2],src[idx+boundary_len+3],len - idx,src+idx+2);
+            req->err_state = MSG_ERROR;
+            return ;
+        }
 
-		idx += boundary_len + 4;
-	    /* we have two cases :
-	    ** ---- file upload
-	    ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
-	    ** Content-Type: application/octet-stream\r\n\r\n
-	    ** <DATA>
-	    ** ---- normal post var
-	    ** Content-Disposition: form-data; name="lastname"\r\n\r\n
-	    ** <DATA>
-	    */
-	    /* 31 = echo -n "content-disposition: form-data;" | wc -c */
-    	if (ngx_strncasecmp(src+idx, (u_char *) "content-disposition: form-data;", 31)) 
-		{		      
-			  //printf("!!!!!!!error boundary----------------Unknown content-type: %s", src+idx);
-		      req->err_state = MSG_ERROR;		     
-		      return ;
-    	}
+        idx += boundary_len + 4;
+        /* we have two cases :
+        ** ---- file upload
+        ** Content-Disposition: form-data; name="somename"; filename="NetworkManager.conf"\r\n
+        ** Content-Type: application/octet-stream\r\n\r\n
+        ** <DATA>
+        ** ---- normal post var
+        ** Content-Disposition: form-data; name="lastname"\r\n\r\n
+        ** <DATA>
+        */
+        /* 31 = echo -n "content-disposition: form-data;" | wc -c */
+        if (ngx_strncasecmp(src+idx, (u_char *) "content-disposition: form-data;", 31)) 
+        {              
+              
+              req->err_state = MSG_ERROR;             
+              return ;
+        }
 
-		idx += 31;
-	    line_end = (u_char *) ngx_strchr(src+idx, '\n');
-	    if (!line_end)
-		{
-	       req->err_state = MSG_ERROR;
-	       return ;
-	    }
+        idx += 31;
+        line_end = (u_char *) ngx_strchr(src+idx, '\n');
+        if (!line_end)
+        {
+           req->err_state = MSG_ERROR;
+           return ;
+        }
 
-		/* Parse content-disposition, extract name / filename */
-	    varn_start = varn_end = filen_start = filen_end = NULL;
-	    if (nx_content_disposition_parse(src+idx, line_end, &varn_start, &varn_end,
-					     &filen_start, &filen_end) != NGX_OK) {
-	      req->err_state = MSG_ERROR;
-	      return ;
-	    }
-	    /* var name is mandatory */
-	    if (!varn_start || !varn_end || varn_end <= varn_start) 
-		{
-		  //printf("!!!!!!!error boundary--------------varn_start-----------------------\n");	
-	      req->msg_state = MSG_ERROR;
-	      return ;
-	    }
-		
-		varn_len = varn_end - varn_start;
-		
-		/* If there is a filename, it is followed by a "content-type" line, skip it */
-	    if (filen_start && filen_end) 
-		{
-	      line_end = (u_char *) ngx_strchr(line_end+1, '\n');
-	      if (!line_end)
-		  {		
-			  req->err_state = MSG_ERROR;		     
-		      return ;		
-	      }
-    	}
+        /* Parse content-disposition, extract name / filename */
+        varn_start = varn_end = filen_start = filen_end = NULL;
+        if (nx_content_disposition_parse(src+idx, line_end, &varn_start, &varn_end,
+                         &filen_start, &filen_end) != NGX_OK) {
+          req->err_state = MSG_ERROR;
+          return ;
+        }
+        /* var name is mandatory */
+        if (!varn_start || !varn_end || varn_end <= varn_start) 
+        {
+             
+          req->msg_state = MSG_ERROR;
+          return ;
+        }
+        
+        varn_len = varn_end - varn_start;
+        
+        /* If there is a filename, it is followed by a "content-type" line, skip it */
+        if (filen_start && filen_end) 
+        {
+          line_end = (u_char *) ngx_strchr(line_end+1, '\n');
+          if (!line_end)
+          {        
+              req->err_state = MSG_ERROR;             
+              return ;        
+          }
+        }
 
-		/* 
-	    ** now idx point to the end of the 
-	    ** content-disposition: form-data; filename="" name=""
-	    */
-	    idx += (u_char *)line_end - (src+idx) + 1;
-	    if (src[idx] != '\r' || src[idx+1] != '\n') 
-		{
-		     req->err_state = MSG_ERROR;
-		     return ;
-	    }
+        /* 
+        ** now idx point to the end of the 
+        ** content-disposition: form-data; filename="" name=""
+        */
+        idx += (u_char *)line_end - (src+idx) + 1;
+        if (src[idx] != '\r' || src[idx+1] != '\n') 
+        {
+             req->err_state = MSG_ERROR;
+             return ;
+        }
 
 
-		
-		if (filen_start) 
-		{
-			final_var.data = (unsigned char *)varn_start;
-			final_var.len = varn_len;			
-			final_data.data = (unsigned char *)filen_start;
-			final_data.len = filen_end - filen_start;
-							
-			final_var.data[final_var.len] = '\0';
-			final_data.data[final_data.len] = '\0'; 	
-			//printf("filen_start -----------%d	%s	 %d  %s\n",final_var.len,final_var.data,final_data.len,final_data.data);	
-			chk_all_rules(&final_data,FILE_EXT,req);
-						
-		}
-		
+        
+        if (filen_start) 
+        {
+            final_var.data = (unsigned char *)varn_start;
+            final_var.len = varn_len;            
+            final_data.data = (unsigned char *)filen_start;
+            final_data.len = filen_end - filen_start;
+                            
+            final_var.data[final_var.len] = '\0';
+            final_data.data[final_data.len] = '\0';     
+            
+            chk_all_rules(&final_data,FILE_EXT,req);
+                        
+        }
+        
 
-		idx += 2;
-	    /* seek the end of the data */
-	    end = NULL;
-	    while (idx < len) 
-		{
-		    end = (u_char *) ngx_strstr(src+idx, "\r\n--");
-		    /* file data can contain \x0 */
-		    while (!end) 
-			{
-				idx += strlen((const char *)src+idx);
-				if (idx < len - 2) 
-				{
-				  idx++;
-				  end = (u_char *) ngx_strstr(src+idx, "\r\n--");
-				}
-				else
-				  break;
-		    }
-	       if (!end) 
-		   {
-				printf("POST data : malformed content-disposition line,perhaps file transfer \n");
-				return ;
-	      }
-	      if (!ngx_strncmp(end+4, boundary, boundary_len))
-				break;
-	      else 
-		  {
-		  		//printf("error POST data : end +4=%s\n",end+4);
-				idx += ((u_char *) end - (src+idx)) + 1;
-				end = NULL;
-	      }
-	    }
+        idx += 2;
+        /* seek the end of the data */
+        end = NULL;
+        while (idx < len) 
+        {
+            end = (u_char *) ngx_strstr(src+idx, "\r\n--");
+            /* file data can contain \x0 */
+            while (!end) 
+            {
+                idx += strlen((const char *)src+idx);
+                if (idx < len - 2) 
+                {
+                  idx++;
+                  end = (u_char *) ngx_strstr(src+idx, "\r\n--");
+                }
+                else
+                  break;
+            }
+           if (!end) 
+           {
+                printf("POST data : malformed content-disposition line,perhaps file transfer \n");
+                return ;
+          }
+          if (!ngx_strncmp(end+4, boundary, boundary_len))
+                break;
+          else 
+          {
+              
+                idx += ((u_char *) end - (src+idx)) + 1;
+                end = NULL;
+          }
+        }
 
-		if (!end) 
-		{
-		     printf("POST data : malformed line\n");
-		     return ;
-    	}
+        if (!end) 
+        {
+             printf("POST data : malformed line\n");
+             return ;
+        }
 
-			
-		if (filen_start) 		
-				idx += (u_char *) end - (src+idx);
-		
+            
+        if (filen_start)         
+                idx += (u_char *) end - (src+idx);
+        
 
-		else if (varn_start)
-		{
-				varc_len = (u_char *) end - (src+idx);
-				final_var.data = (unsigned char *)varn_start;
-				final_var.len = varn_len;
-				final_data.data = src+idx;
-				final_data.len = varc_len;
-					
-				final_var.data[final_var.len] = '\0';
-				final_data.data[final_data.len] = '\0';					
-				//printf("varn_start -----------%d	 %s   %d  %s\n",final_var.len,final_var.data,final_data.len,final_data.data);	
-				chk_all_rules(&final_data,ARGS,req);
-				idx += (u_char *) end - (src+idx);
-			
-		}
-		else
-		{
-			printf("(multipart) : --------------------do nothing\n");
-		}
-	
-				
-		//if (!ngx_strncmp(end, "\r\n--", 2)) 		
-      	idx += 2;
-				
-		
-	}
-	
-	return;
+        else if (varn_start)
+        {
+                varc_len = (u_char *) end - (src+idx);
+                final_var.data = (unsigned char *)varn_start;
+                final_var.len = varn_len;
+                final_data.data = src+idx;
+                final_data.len = varc_len;
+                    
+                final_var.data[final_var.len] = '\0';
+                final_data.data[final_data.len] = '\0';                    
+            
+                chk_all_rules(&final_data,ARGS,req);
+                idx += (u_char *) end - (src+idx);
+            
+        }
+        else
+        {
+            printf("(multipart) : --------------------do nothing\n");
+        }
+    
+                
+        //if (!ngx_strncmp(end, "\r\n--", 2))         
+          idx += 2;
+                
+        
+    }
+    
+    return;
 
 }
 
 
 static void decode_uri(char *uri,http_waf_msg * req)
 {
-	char *p,*args = NULL;
-	int uri_len = strlen(uri);
-	int i;
-		
-	
-	/*  GET /aaa/bbb.html?args=22&aaa# HTTP/1.1 */
-	p = strrchr(uri,' ');
-	if(!p || uri[0] != '/')
-	{
-		req->err_state  = MSG_ERROR;
-		return;
-	}
-	*p = '\0';
+    char                     *p,*args = NULL;
+    int                      uri_len = strlen(uri);
+    int                      i;
+    ngx_cached_open_file_t   *file = NULL;
+        
+    
+    /*  GET /aaa/bbb.html?args=22&aaa# HTTP/1.1 */
+    p = strrchr(uri,' ');
+    if(!p || uri[0] != '/')
+    {
+        req->err_state  = MSG_ERROR;
+        return;
+    }
+    *p = '\0';
 
-	chkvalue.data = uri;
-	chkvalue.len  = strlen(uri);
-	if(1 == chk_all_rules(&chkvalue,DDOS,req))	
-		req->ddos = 1;
-				
-	
-	
-	for(i = 0;i < uri_len;i++)
-	{
-		
-		if(uri[i] == '?')
-		{
-			if(args == NULL)
-			{
-				uri[i] = '\0';
-				args = uri + i +1;
-			}
-		}
-	}	
+    #ifdef USE_SIMHASH
+    snprintf(sim_url,sizeof(sim_url) -1 ,"%s",uri);  
+    #endif
+        
+    for(i = 0;i < uri_len;i++)
+    {
+        
+        if(uri[i] == '?')
+        {
+            if(args == NULL)
+            {
+                uri[i] = '\0';
+                args = uri + i +1;
+                break;
+            }
+        }
+    }    
 
-	(void)find_www_file(uri,req);
-	
+    (void)find_www_file(uri,req);
+
+    chkvalue.data = uri;
+    chkvalue.len  = strlen(uri);
+    
+    if(1 == chk_all_rules(&chkvalue,DDOS,req))    
+        req->ddos = 1;    
+    chk_all_rules(&chkvalue,URL,req); 
+    
+    #ifdef USE_SIMHASH
+    check_simhash(uri,sim_url,req);
+    #endif
+    
+
+    if(args && req->mtd == HTTP_MT_GET && req->rule_id < 100)
+        file = save_train_http_data(uri,args,strlen(args),HTTP_MT_GET);        
+    
 
 
-	/*bbb.html*/
-	p  = strrchr(uri,'/');
-	*p = '\0';
-	
-	p++;
-	req->req_file = p;
-	req->req_dir = uri;
+    /*bbb.html*/
+    p  = strrchr(uri,'/');
+    *p = '\0';
+    
+    p++;
+    req->req_file = p;
+    req->req_dir = uri;
 
-	
-		
-	//printf("URI=%s/%s\n",req->req_dir,req->req_file);
-	chkvalue.data = p;
-	chkvalue.len  = strlen(p);
-	chk_all_rules(&chkvalue,URL,req);
-	
-	
-	
-	/* args=22&aaa#*/
-	if(args != NULL)
-		split_args(args,req);
+    
+    
+    /* args=22&aaa#*/
+    if(args != NULL && req->mtd == HTTP_MT_GET)
+        split_args(args,req,file);
 
 }
 static void decode_cookie(char *cookie,http_waf_msg * req)
 {
-	//printf("Cookie=%s\n",cookie);
-	chkvalue.data = cookie;
-	chkvalue.len  = strlen(cookie);
-	chk_all_rules(&chkvalue,COOKIE,req);
+    //your can add more code here
+    chkvalue.data = cookie;
+    chkvalue.len  = strlen(cookie);
+    chk_all_rules(&chkvalue,COOKIE,req);
 
 }
 static void decode_user_agent(char *user_agent,http_waf_msg * req)
 {
-	//printf("user_agent=%s\n",user_agent);
-	chkvalue.data = user_agent;
-	chkvalue.len  = strlen(user_agent);
-	chk_all_rules(&chkvalue,HEADERS,req);
+    //your can add more code here
+    chkvalue.data = user_agent;
+    chkvalue.len  = strlen(user_agent);
+    chk_all_rules(&chkvalue,HEADERS,req);
 
 }
 
 
 static void decode_content_len(char *p,http_waf_msg * req)
 {
-	req->content_len  = ngx_atoof(p,strlen(p));	
+    req->content_len  = ngx_atoof(p,strlen(p));    
 }
 
 static void decode_content_type(char *p,http_waf_msg * req)
 {
-	char *h;
-	int len;
+    char *h;
+    int len;
 
-	if(strcasestr(p,"application/json"))	
-		req->content_type = HTTP_CONTENT_JSON;
-		
-	
-	else if(strcasestr(p,"application/csp-report"))
-		req->content_type = HTTP_CONTENT_JSON;
-	
-	
-	else if(strcasestr(p,"multipart/form-data"))	
-	{
-		h = strstr(p,"boundary=");
-		if(!h)
-			return;
-		h += 9;
+    if(strcasestr(p,"application/json"))    
+        req->content_type = HTTP_CONTENT_JSON;
+        
+    
+    else if(strcasestr(p,"application/csp-report"))
+        req->content_type = HTTP_CONTENT_JSON;
+    
+    
+    else if(strcasestr(p,"multipart/form-data"))    
+    {
+        h = strstr(p,"boundary=");
+        if(!h)
+            return;
+        h += 9;
 
-		/* RFC 1867/1341 says 70 char max, 
-     	I arbitrarily set min to 3 (yes) */
-		len = strlen(h);
-		if(len<3 || len>70)
-		{
-			req->err_state = MSG_ERROR;
-			return;
+        /* RFC 1867/1341 says 70 char max, 
+         I arbitrarily set min to 3 (yes) */
+        len = strlen(h);
+        if(len<3 || len>70)
+        {
+            req->err_state = MSG_ERROR;
+            return;
 
-		}
-		req->boundary_len = len;
-		req->boundary = h;
-		req->content_type = HTTP_CONTENT_MULTIPART;
-		//printf("boundary_len=%d  %s\n",req->boundary_len,req->boundary);
-	}
-	else
-		req->content_type = 0;
+        }
+        req->boundary_len = len;
+        req->boundary = h;
+        req->content_type = HTTP_CONTENT_MULTIPART;
+
+    }
+    else
+        req->content_type = 0;
 }
 
 
@@ -1136,273 +1310,278 @@ static http_decode_parser_t httpx_parser[] = {
 
 static int check_null_header(http_waf_msg *req)
 {
-	char *p = req->buf;
-	int i;
-	int nullbytes = 0;
+    char *p = req->buf;
+    int i;
+    int nullbytes = 0;
 
 
-	for(i = 0;i < req->req_hdr_size - 1;i++)
-	{
-		if(p[i] == 0)
-		{
-			p[i] = '0';
-			req->err_state = MSG_ERROR;
-			nullbytes ++;
-			
-		}
-		p[i] = tolower(p[i]);
-	}
+    for(i = 0;i < req->req_hdr_size - 1;i++)
+    {
+        if(p[i] == 0)
+        {
+            p[i] = '0';
+            req->err_state = MSG_ERROR;
+            nullbytes ++;
+            
+        }
+        p[i] = tolower(p[i]);
+    }
 
 
-	return nullbytes;
-	
+    return nullbytes;
+    
 }
 
 
 
 static void decode_header(http_waf_msg *req)
 {
-	char *p;	
-	int i,len;
+    char *p;    
+    int i,len;
 
-	if(check_null_header(req) > 0 )
-	{
-		printf("error null headers\n");
-		req->err_state = MSG_ERROR;
-	}
-	
-	for (p = strtok(req->buf, "\r\n"); p; p = strtok(NULL, "\r\n"))
-  	{
-  		
-		for (i = 0; httpx_parser[i].pars; i++) 
-		{	
-			len =  strlen(httpx_parser[i].prefix);
-		    if (!strncasecmp(p, httpx_parser[i].prefix, len))	
-				httpx_parser[i].pars(p+len,req);	
-			//chk_all_rules(&final_data,HEADERS);
-			if(req->rule_id > 200) //matched attack
-				return;
-				
-      	}
-  	}
+    if(check_null_header(req) > 0 )
+    {
+        printf("error null headers\n");
+        req->err_state = MSG_ERROR;
+    }
+    
+    for (p = strtok(req->buf, "\r\n"); p; p = strtok(NULL, "\r\n"))
+      {
+          
+        for (i = 0; httpx_parser[i].pars; i++) 
+        {    
+            len =  strlen(httpx_parser[i].prefix);
+            if (!strncasecmp(p, httpx_parser[i].prefix, len))    
+                httpx_parser[i].pars(p+len,req);    
+            //chk_all_rules(&final_data,HEADERS);
+            if(req->rule_id > 200) //matched attack
+                return;
+                
+          }
+      }
 
 
 }
 static void process_body(http_waf_msg *req)
 {
-	if(req->only_once == 1)
-		return;
-	//printf("req->msg_state=%d body_size=%d content_len=%d body=%s\n",req->msg_state,req->req_body_size,req->content_len,req->req_body);	
-	if(req->content_type == HTTP_CONTENT_MULTIPART)
-		multipart_parse(req->req_body,req);
-	else if(req->content_type == HTTP_CONTENT_JSON)
-		ngx_http_dummy_json_parse(req->req_body,req->req_body_size,req);
-	else
-		split_args(req->req_body,req);
-	
+    ngx_cached_open_file_t      *file = NULL;
+    
+    if(req->only_once == 1)
+        return;
+    
+    if(req->mtd == HTTP_MT_POST && req->rule_id < 100) // cc = 22 ddos = 20
+       file = save_train_http_post_data(req->req_dir,req->req_file,req->req_body,req->req_body_size,req);    
+
+      
+    if(req->content_type == HTTP_CONTENT_MULTIPART)
+        multipart_parse(req->req_body,req);
+    
+    else
+        split_args(req->req_body,req,file);
+    
 }
 
 
 static void init_http_status(http_waf_msg *req)
 {
-	req->content_len   = 0;
-	req->content_type  = 0;
-	req->boundary_len  = 0;
-	req->only_once     = 0;	
-	req->log_msg       = NULL;
+    req->content_len   = 0;
+    req->content_type  = 0;
+    req->boundary_len  = 0;
+    req->only_once     = 0;    
+    req->log_msg       = NULL;
 
 }
 
 static void process_header(http_waf_msg *req)
 {
-		
-	char *end;
-	char *buf = req->buf;
-	int   len = req->pos;
-	
-	req->mtd = http_req_method(buf, 0);		
-	/*maybe body data such as file transfer*/
-	if(req->mtd != HTTP_MT_GET && req->mtd != HTTP_MT_POST) 
-	{
-		//printf("NOT get or post--------------req->mtd:%d %d %s",req->mtd,len,buf);
-		//req->msg_state = MSG_DONE;
-		return;
-	}	
-	
-	/* decode http get */
-	if(req->msg_state != MSG_BODY)
-	{
-		end = http_head_end(buf,len);
-		if(end != NULL)
-		{	
-			//printf("%s\n",req->buf);
-			*end = '\0';
-			end++;
-			len = end - buf;
-			
-			req->req_hdr_size  = len;
-			req->req_body      = end;
-			req->req_body_size = req->pos - len;		
-			req->req_cnt       = 1;	
-			
-			init_http_status(req);
-			decode_header(req);
-				
-						
-			
-			if(req->req_body_size >= req->content_len)
-				req->msg_state = MSG_DONE;
-			else
-				req->msg_state = MSG_BODY;
+        
+    char *end;
+    char *buf = req->buf;
+    int   len = req->pos;
+    
+    req->mtd = http_req_method(buf, 0);        
+    /*maybe body data such as file transfer*/
+    if(req->mtd != HTTP_MT_GET && req->mtd != HTTP_MT_POST) 
+    {
+        
+        //req->msg_state = MSG_DONE;
+        return;
+    }    
+    
+    /* decode http get */
+    if(req->msg_state != MSG_BODY)
+    {
+        end = http_head_end(buf,len);
+        if(end != NULL)
+        {    
+    
+            *end = '\0';
+            end++;
+            len = end - buf;
+            
+            req->req_hdr_size  = len;
+            req->req_body      = end;
+            req->req_body_size = req->pos - len;        
+            req->req_cnt       = 1;    
+            
+            init_http_status(req);
+            decode_header(req);
+                
+                        
+            
+            if(req->req_body_size >= req->content_len)
+                req->msg_state = MSG_DONE;
+            else
+                req->msg_state = MSG_BODY;
 
-		
-			if(req->msg_state ==MSG_DONE && req->content_len > 0)
-				process_body(req);			
-			
-		}
-		else
-			req->msg_state = MSG_RQMETH;			
-	}
-	
+        
+            if(req->msg_state ==MSG_DONE && req->content_len > 0)
+                process_body(req);            
+            
+        }
+        else
+            req->msg_state = MSG_RQMETH;            
+    }
+    
 }
 
 
 void init_http_msg(http_waf_msg *req)
 {
-	req->ddos         = 0;
-	req->rule_id      = 0;
-	req->severity     = 0;
-	req->white_url    = 0;
-	req->black_url    = 0;
-	req->no_www_file  = 0;
-	req->logcenter    = 0;
-	req->err_state    = 0;
-	req->uri          = NULL;
-	req->host         = NULL;
-	req->req_file     = NULL;
-	req->req_dir      = NULL;
-	req->log_msg      = NULL;
-	req->str_matched  = NULL;
+    req->ddos         = 0;
+    req->rule_id      = 0;
+    req->severity     = 0;
+    req->white_url    = 0;
+    req->black_url    = 0;
+    req->no_www_file  = 0;
+    req->logcenter    = 0;
+    req->err_state    = 0;
+    req->uri          = NULL;
+    req->host         = NULL;
+    req->req_file     = NULL;
+    req->req_dir      = NULL;
+    req->log_msg      = NULL;
+    req->str_matched  = NULL;
+    req->mtd          = HTTP_MT_OPTIONS;
 }
 
 int check_action(http_waf_msg *req)
 {
 
-	if(req->white_url == 1)
-		return ALLOW;
+    if(req->white_url == 1)
+        return ALLOW;
 
-	if(gvar.err_is_attack == 1 && req->err_state == MSG_ERROR)
-	{
-		snprintf(http_log_msg,sizeof(http_log_msg)-1,"HTTP PROTOCOL ERROR ,Perhaps  Attack.");			
-		req->log_msg     = http_log_msg;
-		req->rule_id     = ATK_ERR_HEAD;
-	}	
-	
+    if(gvar.err_is_attack == 1 && req->err_state == MSG_ERROR)
+    {
+        snprintf(http_log_msg,sizeof(http_log_msg)-1,"HTTP PROTOCOL ERROR ,Perhaps  Attack.");            
+        req->log_msg     = http_log_msg;
+        req->rule_id     = ATK_ERR_HEAD;
+    }    
+    
 
-	if(gvar.action == ALERT)
-	{
-		if(req->rule_id > 100) //0 -100 reserve for ddos....
-			return ALERT;
-		if(req->black_url == 1)
-			return ALERT;
-		if(req->no_www_file == 1)
-			return ALERT;
-		
-		
-	}	
+    if(gvar.action == ALERT)
+    {
+        if(req->rule_id > 100) //0 -100 reserve for ddos....
+            return ALERT;
+        if(req->black_url == 1)
+            return ALERT;
+        if(req->no_www_file == 1)
+            return ALERT;
+        
+        
+    }    
 
-	
-	if(gvar.action == DROP)
-	{
-		if(req->rule_id > 100) //0 -100 reserve for ddos....
-			return DROP;
-		if(req->black_url == 1)
-			return DROP;
-		if(req->no_www_file == 1)
-			return DROP;		
-		
-	}	
+    
+    if(gvar.action == DROP)
+    {
+        if(req->rule_id > 100) //0 -100 reserve for ddos....
+            return DROP;
+        if(req->black_url == 1)
+            return DROP;
+        if(req->no_www_file == 1)
+            return DROP;        
+        
+    }    
 
-	if(req->req_cnt == 1)
-	{
-		req->req_cnt = 0;
-		return REQ_CNT;		
-	}
-	
-	return ALLOW;
+    if(req->req_cnt == 1)
+    {
+        req->req_cnt = 0;
+        return REQ_CNT;        
+    }
+    
+    return ALLOW;
 
 }
 
 
 int process_http(const char *buf,int len,http_waf_msg *req)
 {
-	//return 0;
-	//printf("len=%d state=%d\n",len,req->msg_state);
-	switch(req->msg_state)
-	{
-		/*first http header msg */
-		case MSG_RQBEFORE:
-			memcpy(req->buf,buf,len);
-			req->file_size += len;
-			req->pos = len;
-			req->buf[len] = '\0';
-			init_http_msg(req);
-			process_header(req);
-			break;
 
-		/*header data not over*/
-		case MSG_RQMETH: 
-			if((req->pos + len) > MAX_HTTP_HEADER_SIZE)
-				return check_action(req);
-			memcpy(req->buf + req->pos,buf,len);
-			req->pos += len;
-			req->buf[req->pos] = '\0';
-			process_header(req);				
-			break;
-		/*body not over*/
-		case MSG_BODY: 
-			req->file_size += len;
-			if(req->file_size >= req->content_len && req->content_len >= MAX_HTTP_HEADER_SIZE)
-			{				
-				req->msg_state = MSG_DONE;
-				req->file_size = 0;
-			}
-				
-			if((req->pos + len) > MAX_HTTP_HEADER_SIZE)
-			{					
-				process_body(req);
-				req->only_once = 1;
-				
-				return check_action(req);
-			}	
-			memcpy(req->buf + req->pos,buf,len);
-			req->pos += len;
-			req->buf[req->pos] = '\0';
-			req->req_body_size = req->pos - req->req_hdr_size;
-			if(req->req_body_size >= req->content_len)
-			{
-				req->msg_state = MSG_DONE;
-				process_body(req);	
-			}
-			break;	
-		/*keep alive or h2*/
-		case MSG_DONE:
-			memcpy(req->buf,buf,len);	
-			req->file_size += len;
-			req->pos = len;
-			req->buf[len] = '\0';
-			init_http_msg(req);
-			process_header(req);
-			break;
-		
-			
-		default:
-			break;
-	}
+    switch(req->msg_state)
+    {
+        /*first http header msg */
+        case MSG_RQBEFORE:
+            memcpy(req->buf,buf,len);
+            req->file_size += len;
+            req->pos = len;
+            req->buf[len] = '\0';
+            init_http_msg(req);
+            process_header(req);
+            break;
 
-	return check_action(req);
-	
-	
+        /*header data not over*/
+        case MSG_RQMETH: 
+            if((req->pos + len) > MAX_HTTP_HEADER_SIZE)
+                return check_action(req);
+            memcpy(req->buf + req->pos,buf,len);
+            req->pos += len;
+            req->buf[req->pos] = '\0';
+            process_header(req);                
+            break;
+        /*body not over*/
+        case MSG_BODY: 
+            req->file_size += len;
+            if(req->file_size >= req->content_len && req->content_len >= MAX_HTTP_HEADER_SIZE)
+            {                
+                req->msg_state = MSG_DONE;
+                req->file_size = 0;
+            }
+                
+            if((req->pos + len) > MAX_HTTP_HEADER_SIZE)
+            {                    
+                process_body(req);
+                req->only_once = 1;
+                
+                return check_action(req);
+            }    
+            memcpy(req->buf + req->pos,buf,len);
+            req->pos += len;
+            req->buf[req->pos] = '\0';
+            req->req_body_size = req->pos - req->req_hdr_size;
+            if(req->req_body_size >= req->content_len)
+            {
+                req->msg_state = MSG_DONE;
+                process_body(req);    
+            }
+            break;    
+        /*keep alive or h2*/
+        case MSG_DONE:
+            memcpy(req->buf,buf,len);    
+            req->file_size += len;
+            req->pos = len;
+            req->buf[len] = '\0';
+            init_http_msg(req);
+            process_header(req);
+            break;
+        
+            
+        default:
+            break;
+    }
+
+    return check_action(req);
+    
+    
 }
 
 

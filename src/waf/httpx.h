@@ -20,7 +20,13 @@
 #include <time.h>
 #include <stdlib.h>
 
-static char http_log_msg[512] = {0};
+//#define HAVE_MQTT	1
+
+
+#define  MACHINE_LEANRING_RULE_ID 888
+
+static   char http_log_msg[512] = {0};
+static   char http_str_match[256] = {0};
 
 #define MAX_HTTP_HEADER_SIZE 1024*20
 #define MAX_HTTP_BODY_SIZE 1024*20
@@ -186,7 +192,8 @@ enum h1_content_type {
 	HTTP_CONTENT_MULTIPART  =  1, // request: multipart/form-data
 	HTTP_CONTENT_JSON  =  2, // request: multipart/form-data
 };
-
+	
+typedef struct _http_waf_msg mqtt_waf_msg;
 typedef struct _http_waf_msg http_waf_msg;
 struct _http_waf_msg {
 	enum ngx_h1_state msg_state;
@@ -206,8 +213,14 @@ struct _http_waf_msg {
 	int req_cnt;                  /*request count */ 
 	int ddos;                     /*ddos & cc */ 
 	int no_www_file;              /*if exits url file in www */
+//#ifdef HAVE_MQTT
+	int white_topic;			  /* publish or subcrible topic  white list */			
+	int black_topic;			  /* publish or subcrible topic  black list */	
+//#endif
 	int white_url;				  /* url white list */			
 	int black_url;				  /* url black list */	
+
+	
 	int rule_id;                  //matched attack ruleid
 	int severity;                 //severity:'CRITICAL' 'warning'
 	int action;                   //ALLOW 0 DROP 1  ALERT 2

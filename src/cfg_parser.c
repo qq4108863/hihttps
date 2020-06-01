@@ -1579,8 +1579,8 @@ yyreduce:
 #line 123 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("frontend", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 1586 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1588,7 +1588,7 @@ yyreduce:
   case 49:
 #line 129 "cfg_parser.y" /* yacc.c:1646  */
     {
-	/* NB: Mid-rule action */
+    /* NB: Mid-rule action */
 	AZ(cur_fa);
 	cur_fa = front_arg_new();
 }
@@ -1599,7 +1599,7 @@ yyreduce:
 #line 135 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (front_arg_add(cfg, cur_fa) != 1)
-		YYABORT;
+    	YYABORT;
 	cur_fa = NULL;
 }
 #line 1606 "cfg_parser.c" /* yacc.c:1646  */
@@ -1609,11 +1609,11 @@ yyreduce:
 #line 161 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s)) {
-		if (strcmp((yyvsp[0].s), "*") == 0)
-			cur_fa->ip = NULL;
-		else
-			cur_fa->ip = strdup((yyvsp[0].s));
-	}
+    	if (strcmp((yyvsp[0].s), "*") == 0)
+        	cur_fa->ip = NULL;
+    	else
+        	cur_fa->ip = strdup((yyvsp[0].s));
+    }
 }
 #line 1619 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1634,7 +1634,7 @@ yyreduce:
 #line 189 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s))
-		cur_pem->ocspfn = strdup((yyvsp[0].s));
+    	cur_pem->ocspfn = strdup((yyvsp[0].s));
 }
 #line 1640 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1643,9 +1643,9 @@ yyreduce:
 #line 195 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cur_pem != NULL)
-		cur_pem->ocsp_vfy = (yyvsp[0].i);
+    	cur_pem->ocsp_vfy = (yyvsp[0].i);
 	else
-		cfg->OCSP_VFY = (yyvsp[0].i);
+    	cfg->OCSP_VFY = (yyvsp[0].i);
 }
 #line 1651 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1662,15 +1662,15 @@ yyreduce:
 #line 208 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s)) {
-		size_t l;
-		l = strlen((yyvsp[0].s));
-		cfg->PEM_DIR = malloc(l + 2);
-		strcpy(cfg->PEM_DIR, (yyvsp[0].s));
-		if (cfg->PEM_DIR[l-1] != '/')
-			strcat(cfg->PEM_DIR, "/");
-	}
+    	size_t l;
+    	l = strlen((yyvsp[0].s));
+    	cfg->PEM_DIR = malloc(l + 2);
+    	strcpy(cfg->PEM_DIR, (yyvsp[0].s));
+    	if (cfg->PEM_DIR[l-1] != '/')
+        	strcat(cfg->PEM_DIR, "/");
+    }
 	else
-		cfg->PEM_DIR = NULL;
+    	cfg->PEM_DIR = NULL;
 }
 #line 1676 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1679,9 +1679,9 @@ yyreduce:
 #line 222 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s))
-		cfg->PEM_DIR_GLOB = strdup((yyvsp[0].s));
+    	cfg->PEM_DIR_GLOB = strdup((yyvsp[0].s));
 	else
-		cfg->PEM_DIR_GLOB = NULL;
+    	cfg->PEM_DIR_GLOB = NULL;
 
 }
 #line 1688 "cfg_parser.c" /* yacc.c:1646  */
@@ -1691,9 +1691,9 @@ yyreduce:
 #line 231 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s))
-		cfg->OCSP_DIR = strdup((yyvsp[0].s));
+    	cfg->OCSP_DIR = strdup((yyvsp[0].s));
 	else
-		cfg->OCSP_DIR = NULL;
+    	cfg->OCSP_DIR = NULL;
 }
 #line 1699 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1726,17 +1726,17 @@ yyreduce:
 #line 254 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) != NULL) {
-		int r;
-		struct cfg_cert_file *cert;
-		cert = cfg_cert_file_new();
-		cert->filename = strdup((yyvsp[0].s));
-		r = cfg_cert_vfy(cert);
-		if (r == 0) {
-			cfg_cert_file_free(&cert);
-			YYABORT;
-		}
-		cfg_cert_add(cert, &cur_fa->certs);
-	}
+    	int r;
+    	struct cfg_cert_file *cert;
+    	cert = cfg_cert_file_new();
+    	cert->filename = strdup((yyvsp[0].s));
+    	r = cfg_cert_vfy(cert);
+    	if (r == 0) {
+        	cfg_cert_file_free(&cert);
+        	YYABORT;
+        }
+    	cfg_cert_add(cert, &cur_fa->certs);
+    }
 }
 #line 1742 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1744,7 +1744,7 @@ yyreduce:
   case 84:
 #line 269 "cfg_parser.y" /* yacc.c:1646  */
     {
-	/* NB: Mid-rule action */
+    /* NB: Mid-rule action */
 	AZ(cur_pem);
 	cur_pem = cfg_cert_file_new();
 }
@@ -1755,11 +1755,11 @@ yyreduce:
 #line 275 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cfg_cert_vfy(cur_pem) != 0)
-		cfg_cert_add(cur_pem, &cur_fa->certs);
+    	cfg_cert_add(cur_pem, &cur_fa->certs);
 	else {
-		cfg_cert_file_free(&cur_pem);
-		YYABORT;
-	}
+    	cfg_cert_file_free(&cur_pem);
+    	YYABORT;
+    }
 	cur_pem = NULL;
 }
 #line 1766 "cfg_parser.c" /* yacc.c:1646  */
@@ -1774,7 +1774,7 @@ yyreduce:
   case 87:
 #line 288 "cfg_parser.y" /* yacc.c:1646  */
     {
-		cur_fa->sni_nomatch_abort = (yyvsp[0].i);
+    	cur_fa->sni_nomatch_abort = (yyvsp[0].i);
 }
 #line 1780 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1783,19 +1783,19 @@ yyreduce:
 #line 292 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cur_fa->selected_protos != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify tls after ssl,"
-		    " tls or tls-protos.\n",
-		    __func__, __FILE__, __LINE__);
-		front_arg_destroy(cur_fa);
-		cur_fa = NULL;
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify tls after ssl,"
+            " tls or tls-protos.\n",
+            __func__, __FILE__, __LINE__);
+    	front_arg_destroy(cur_fa);
+    	cur_fa = NULL;
+    	YYABORT;
+    }
 	if ((yyvsp[0].i))
-		cur_fa->selected_protos = TLS_OPTION_PROTOS;
+    	cur_fa->selected_protos = TLS_OPTION_PROTOS;
 	else
-		fprintf(stderr,
-		    "Warning: tls = off is deprecated and has no effect.\n");
+    	fprintf(stderr,
+            "Warning: tls = off is deprecated and has no effect.\n");
 }
 #line 1801 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1804,19 +1804,19 @@ yyreduce:
 #line 308 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cur_fa->selected_protos != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify ssl after ssl,"
-		    " tls or tls-protos.\n",
-		    __func__, __FILE__, __LINE__);
-		front_arg_destroy(cur_fa);
-		cur_fa = NULL;
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify ssl after ssl,"
+            " tls or tls-protos.\n",
+            __func__, __FILE__, __LINE__);
+    	front_arg_destroy(cur_fa);
+    	cur_fa = NULL;
+    	YYABORT;
+    }
 	if ((yyvsp[0].i))
-		cur_fa->selected_protos = SSL_OPTION_PROTOS;
+    	cur_fa->selected_protos = SSL_OPTION_PROTOS;
 	else
-		fprintf(stderr,
-		    "Warning: ssl = off is deprecated and has no effect.\n");
+    	fprintf(stderr,
+            "Warning: ssl = off is deprecated and has no effect.\n");
 }
 #line 1822 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1825,14 +1825,14 @@ yyreduce:
 #line 324 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cur_fa->selected_protos != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify tls-protos after"
-		    " ssl, tls or tls-protos\nSelected before was %d\n",
-		    __func__, __FILE__, __LINE__, cur_fa->selected_protos);
-		front_arg_destroy(cur_fa);
-		cur_fa = NULL;
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify tls-protos after"
+            " ssl, tls or tls-protos\nSelected before was %d\n",
+            __func__, __FILE__, __LINE__, cur_fa->selected_protos);
+    	front_arg_destroy(cur_fa);
+    	cur_fa = NULL;
+    	YYABORT;
+    }
 }
 #line 1838 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1885,9 +1885,9 @@ yyreduce:
 #line 348 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].i))
-		cfg->LOG_LEVEL = 0;
+    	cfg->LOG_LEVEL = 0;
 	else
-		cfg->LOG_LEVEL = 1;
+    	cfg->LOG_LEVEL = 1;
 }
 #line 1893 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1914,17 +1914,17 @@ yyreduce:
 #line 361 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cfg->SELECTED_TLS_PROTOS != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify tls after ssl,"
-		    " tls or tls-protos\n",
-		    __func__, __FILE__, __LINE__);
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify tls after ssl,"
+            " tls or tls-protos\n",
+            __func__, __FILE__, __LINE__);
+    	YYABORT;
+    }
 	if ((yyvsp[0].i))
-		cfg->SELECTED_TLS_PROTOS = TLS_OPTION_PROTOS;
+    	cfg->SELECTED_TLS_PROTOS = TLS_OPTION_PROTOS;
 	else
-		fprintf(stderr,
-		    "Warning: tls = off is deprecated and has no effect.\n");
+    	fprintf(stderr,
+            "Warning: tls = off is deprecated and has no effect.\n");
 }
 #line 1930 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1933,17 +1933,17 @@ yyreduce:
 #line 376 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cfg->SELECTED_TLS_PROTOS != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify ssl after ssl,"
-		    " tls or tls-protos.\n",
-		    __func__, __FILE__, __LINE__);
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify ssl after ssl,"
+            " tls or tls-protos.\n",
+            __func__, __FILE__, __LINE__);
+    	YYABORT;
+    }
 	if ((yyvsp[0].i))
-		cfg->SELECTED_TLS_PROTOS = SSL_OPTION_PROTOS;
+    	cfg->SELECTED_TLS_PROTOS = SSL_OPTION_PROTOS;
 	else
-		fprintf(stderr,
-		    "Warning: ssl = off is deprecated and has no effect.\n");
+    	fprintf(stderr,
+            "Warning: ssl = off is deprecated and has no effect.\n");
 }
 #line 1949 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -1952,12 +1952,12 @@ yyreduce:
 #line 391 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cfg->SELECTED_TLS_PROTOS != 0) {
-		fprintf(stderr, "%s (%s, line %d):"
-		    " It is illegal to specify tls-protos after"
-		    " ssl, tls or tls-protos\n",
-		    __func__, __FILE__, __LINE__);
-		YYABORT;
-	}
+    	fprintf(stderr, "%s (%s, line %d):"
+            " It is illegal to specify tls-protos after"
+            " ssl, tls or tls-protos\n",
+            __func__, __FILE__, __LINE__);
+    	YYABORT;
+    }
 }
 #line 1963 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2010,8 +2010,8 @@ yyreduce:
 #line 416 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("chroot", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2017 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2020,8 +2020,8 @@ yyreduce:
 #line 423 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("backend", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2027 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2030,8 +2030,8 @@ yyreduce:
 #line 430 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("pem-file", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2037 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2039,7 +2039,7 @@ yyreduce:
   case 121:
 #line 436 "cfg_parser.y" /* yacc.c:1646  */
     {
-	/* NB: Mid-rule action */
+    /* NB: Mid-rule action */
 	AZ(cur_pem);
 	cur_pem = cfg_cert_file_new();
 }
@@ -2050,15 +2050,15 @@ yyreduce:
 #line 442 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if (cfg_cert_vfy(cur_pem) != 0) {
-		if (cfg->CERT_DEFAULT != NULL) {
-			struct cfg_cert_file *tmp = cfg->CERT_DEFAULT;
-			cfg_cert_add(tmp, &cfg->CERT_FILES);
-		}
-		cfg->CERT_DEFAULT = cur_pem;
-	} else {
-		cfg_cert_file_free(&cur_pem);
-		YYABORT;
-	}
+    	if (cfg->CERT_DEFAULT != NULL) {
+        	struct cfg_cert_file *tmp = cfg->CERT_DEFAULT;
+        	cfg_cert_add(tmp, &cfg->CERT_FILES);
+        }
+    	cfg->CERT_DEFAULT = cur_pem;
+    } else {
+    	cfg_cert_file_free(&cur_pem);
+    	YYABORT;
+    }
 	cur_pem = NULL;
 }
 #line 2065 "cfg_parser.c" /* yacc.c:1646  */
@@ -2094,8 +2094,8 @@ yyreduce:
 #line 468 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("user", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2101 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2104,8 +2104,8 @@ yyreduce:
 #line 475 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("group", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2111 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2156,8 +2156,8 @@ yyreduce:
 #line 503 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) && config_param_validate("alpn-protos", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2163 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2166,9 +2166,9 @@ yyreduce:
 #line 510 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) &&
-	    config_param_validate("syslog-facility", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        config_param_validate("syslog-facility", (yyvsp[0].s), cfg, /* XXX: */ "",
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2174 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2189,9 +2189,9 @@ yyreduce:
 #line 522 "cfg_parser.y" /* yacc.c:1646  */
     {
 	if ((yyvsp[0].s) &&
-	    config_param_validate("log-filename", (yyvsp[0].s), cfg, /* XXX: */ "",
-	    yyget_lineno()) != 0)
-		YYABORT;
+        config_param_validate("log-filename", (yyvsp[0].s), cfg, /* XXX: */ "",
+        yyget_lineno()) != 0)
+    	YYABORT;
 }
 #line 2197 "cfg_parser.c" /* yacc.c:1646  */
     break;
@@ -2209,7 +2209,7 @@ yyreduce:
 	cfg->SHARED_CACHE = (yyvsp[0].i);
 #else
 	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
-			"for '%s'", input_line);
+            "for '%s'", input_line);
 	YYABORT;
 #endif
 }
@@ -2221,11 +2221,11 @@ yyreduce:
     {
 #ifdef USE_SHARED_CACHE
 	if ((yyvsp[0].s) && config_param_validate("shared-cache-listen", (yyvsp[0].s), cfg,
-		/* XXX: */ "", yyget_lineno()) != 0)
-		YYABORT;
+        /* XXX: */ "", yyget_lineno()) != 0)
+    	YYABORT;
 #else
 	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
-			"for '%s'", input_line);
+            "for '%s'", input_line);
 	YYABORT;
 #endif
 }
@@ -2237,11 +2237,11 @@ yyreduce:
     {
 #ifdef USE_SHARED_CACHE
 	if ((yyvsp[0].s) && config_param_validate("shared-cache-peer", (yyvsp[0].s), cfg,
-		/* XXX: */ "", yyget_lineno()) != 0)
-		YYABORT;
+        /* XXX: */ "", yyget_lineno()) != 0)
+    	YYABORT;
 #else
 	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
-			"for '%s'", input_line);
+            "for '%s'", input_line);
 	YYABORT;
 #endif
 }
@@ -2253,11 +2253,11 @@ yyreduce:
     {
 #ifdef USE_SHARED_CACHE
 	if ((yyvsp[0].s) && config_param_validate("shared-cache-if", (yyvsp[0].s), cfg,
-		/* XXX: */ "", yyget_lineno()) != 0)
-		YYABORT;
+        /* XXX: */ "", yyget_lineno()) != 0)
+    	YYABORT;
 #else
 	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
-			"for '%s'", input_line);
+            "for '%s'", input_line);
 	YYABORT;
 #endif
 }
@@ -2507,12 +2507,12 @@ yyreturn:
 void
 yyerror(hihttps_config *cfg, const char *s)
 {
-	(void) cfg;
+    (void) cfg;
 
-	/* Clean up if FRONTEND_BLK parsing failed */
+    /* Clean up if FRONTEND_BLK parsing failed */
 	if (cur_fa != NULL)
-		FREE_OBJ(cur_fa);
+    	FREE_OBJ(cur_fa);
 
 	config_error_set("Parsing error in line %d: %s: '%s'",
-	    yyget_lineno(), s, strlen(input_line) > 0 ? input_line : "");
+        yyget_lineno(), s, strlen(input_line) > 0 ? input_line : "");
 }

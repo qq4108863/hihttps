@@ -12,9 +12,6 @@ MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex|drop" 
 ######################检测到攻击后，重定向到某个网页，仅ruleAction drop有效################
 #DeniedUrl "http://www.hihttps.com/404.html"
 
-###如果文件名没做特殊处理，强烈建议开启www目录文件检查模式，阻止大多数攻击#################
-#www_dir /usr/share/nginx/html/
-
 
 ######默认rules目录已经加载了DDOS & CC防御，要测试并发请求，可以临时停用DDOS规则。##########
 ######1.REQUEST-20-APPLICATION-CC-DDOS.conf        DDOS & CC防御############################
@@ -23,5 +20,5 @@ MainRule "rx:select|union|update|delete|insert|table|from|ascii|hex|unhex|drop" 
 ######4.REQUEST-941-APPLICATION-ATTACK-XSS.conf    XSS攻击##################################
 ######5.REQUEST-933-APPLICATION-ATTACK-PHP.conf    PHP相关规则##############################
 
-######################更多高级技术服务可以联系QQ:4108863 微信:wmkwang ######################
+######################更多高级技术服务可以联系QQ/微信:4108863  #############################
 

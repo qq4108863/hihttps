@@ -15,8 +15,8 @@
 	
 typedef struct _cckey
 {
-	unsigned int count;
-	unsigned int block_timeout;
+	int count;
+	int block_timeout;
 	time_t t;
 
 }ngx_cc_key_t;

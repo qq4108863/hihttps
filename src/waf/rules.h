@@ -5,6 +5,8 @@
 #include "ssl_hash.h"
 #include "ssl_regex.h"
 #include "httpx.h"
+#include "mqtt.h"
+
 
 
 
@@ -74,7 +76,10 @@ enum DUMMY_MATCH_ZONE {
   FILE_EXT,
   COOKIE,
   DDOS,
-  UNKNOWN
+  UNKNOWN,
+  C_MQTT_LOGIN,
+  C_MQTT_PUBLISH,
+  C_MQTT_SUBSCRIBE
 };
 
 
@@ -513,13 +518,15 @@ typedef struct ngx_http_nx_json_s {
 ** To avoid getting DoS'ed, define max depth
 ** for JSON parser, as it is recursive
 */
-#define JSON_MAX_DEPTH 10
+//#define JSON_MAX_DEPTH 10
 
 
 ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
 ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 int chk_all_rules(ngx_str_t *name,enum DUMMY_MATCH_ZONE,http_waf_msg *req);
+int chk_mqtt_rules(ngx_str_t *name, enum DUMMY_MATCH_ZONE	zone,mqtt_waf_msg *req);
+
 void init_rules();
 
 

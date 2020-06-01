@@ -21,13 +21,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "httpx.h"
+#include "mqtt.h"
+
 
 
 	
 void init_atk_log(void);
 void open_log_socket(void);
 
-void log_to_file(struct sockaddr_storage addr,http_waf_msg *req,int action,char *raw_buf,int raw_len);
+void log_http_to_file(struct sockaddr_storage addr,http_waf_msg *req,int action,char *raw_buf,int raw_len);
+void log_mqtt_to_file(struct sockaddr_storage addr,mqtt_waf_msg *req,int action,char *raw_buf,int raw_len);
 void bytes_stat(struct sockaddr_storage addr,int in,int out);
 void req_stat(struct sockaddr_storage addr,int req,int atk);
 
