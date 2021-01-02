@@ -75,21 +75,21 @@
 #include "foreign/uthash.h"
 
 extern int yylex (void);
-extern int yyparse(hihttps_config *);
+extern int yyparse(aihttps_config *);
 extern FILE *yyin;
 int yyget_lineno(void);
 
 void config_error_set(char *, ...);
-int config_param_validate(char *k, char *v, hihttps_config *cfg,
+int config_param_validate(char *k, char *v, aihttps_config *cfg,
     char *file, int line);
-int front_arg_add(hihttps_config *cfg, struct front_arg *fa);
+int front_arg_add(aihttps_config *cfg, struct front_arg *fa);
 struct front_arg *front_arg_new(void);
 void front_arg_destroy(struct front_arg *fa);
 struct cfg_cert_file *
 cfg_cert_file_new(void);
 void cfg_cert_file_free(struct cfg_cert_file **cfptr);
 int cfg_cert_vfy(struct cfg_cert_file *cf);
-void yyerror(hihttps_config *, const char *);
+void yyerror(aihttps_config *, const char *);
 void cfg_cert_add(struct cfg_cert_file *cf, struct cfg_cert_file **dst);
 
 static struct front_arg *cur_fa;
@@ -285,7 +285,7 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-int yyparse (hihttps_config *cfg);
+int yyparse (aihttps_config *cfg);
 
 #endif /* !YY_YY_CFG_PARSER_H_INCLUDED  */
 
@@ -973,7 +973,7 @@ do {                                                                      \
 `----------------------------------------*/
 
 static void
-yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, hihttps_config *cfg)
+yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, aihttps_config *cfg)
 {
   FILE *yyo = yyoutput;
   YYUSE (yyo);
@@ -993,7 +993,7 @@ yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvalue
 `--------------------------------*/
 
 static void
-yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, hihttps_config *cfg)
+yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, aihttps_config *cfg)
 {
   YYFPRINTF (yyoutput, "%s %s (",
              yytype < YYNTOKENS ? "token" : "nterm", yytname[yytype]);
@@ -1031,7 +1031,7 @@ do {                                                            \
 `------------------------------------------------*/
 
 static void
-yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule, hihttps_config *cfg)
+yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule, aihttps_config *cfg)
 {
   unsigned long int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
@@ -1311,7 +1311,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 `-----------------------------------------------*/
 
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, hihttps_config *cfg)
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, aihttps_config *cfg)
 {
   YYUSE (yyvaluep);
   YYUSE (cfg);
@@ -1341,7 +1341,7 @@ int yynerrs;
 `----------*/
 
 int
-yyparse (hihttps_config *cfg)
+yyparse (aihttps_config *cfg)
 {
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
@@ -2208,7 +2208,7 @@ yyreduce:
 #ifdef USE_SHARED_CACHE
 	cfg->SHARED_CACHE = (yyvsp[0].i);
 #else
-	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
+	fprintf(stderr, "aihttps needs to be compiled with --enable-sessioncache "
             "for '%s'", input_line);
 	YYABORT;
 #endif
@@ -2224,7 +2224,7 @@ yyreduce:
         /* XXX: */ "", yyget_lineno()) != 0)
     	YYABORT;
 #else
-	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
+	fprintf(stderr, "aihttps needs to be compiled with --enable-sessioncache "
             "for '%s'", input_line);
 	YYABORT;
 #endif
@@ -2240,7 +2240,7 @@ yyreduce:
         /* XXX: */ "", yyget_lineno()) != 0)
     	YYABORT;
 #else
-	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
+	fprintf(stderr, "aihttps needs to be compiled with --enable-sessioncache "
             "for '%s'", input_line);
 	YYABORT;
 #endif
@@ -2256,7 +2256,7 @@ yyreduce:
         /* XXX: */ "", yyget_lineno()) != 0)
     	YYABORT;
 #else
-	fprintf(stderr, "hihttps needs to be compiled with --enable-sessioncache "
+	fprintf(stderr, "aihttps needs to be compiled with --enable-sessioncache "
             "for '%s'", input_line);
 	YYABORT;
 #endif
@@ -2505,7 +2505,7 @@ yyreturn:
 
 
 void
-yyerror(hihttps_config *cfg, const char *s)
+yyerror(aihttps_config *cfg, const char *s)
 {
     (void) cfg;
 

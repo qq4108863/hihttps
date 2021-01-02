@@ -95,7 +95,7 @@ struct front_arg {
 };
 
 /* configuration structure */
-struct __hihttps_config {
+struct __aihttps_config {
     PROXY_MODE PMODE;
     int SELECTED_TLS_PROTOS;
     int WRITE_IP_OCTET;
@@ -154,11 +154,11 @@ struct __hihttps_config {
     int OCSP_REFRESH_INTERVAL;
 };
 
-typedef struct __hihttps_config hihttps_config;
+typedef struct __aihttps_config aihttps_config;
 
 const char * config_error_get (void);
-hihttps_config * config_new (void);
-void config_destroy (hihttps_config *cfg);
-int config_parse_cli(int argc, char **argv, hihttps_config *cfg);
+aihttps_config * config_new (void);
+void config_destroy (aihttps_config *cfg);
+int config_parse_cli(int argc, char **argv, aihttps_config *cfg);
 
 #endif  /* CONFIGURATION_H_INCLUDED */

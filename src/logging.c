@@ -42,15 +42,15 @@
 
 #include "logging.h"
 #include "configuration.h"
-#include "hihttps.h"
+#include "aihttps.h"
 #include "hssl_locks.h"
 #include "ocsp.h"
 #include "shctx.h"
 #include "foreign/vpf.h"
 #include "foreign/uthash.h"
 
-/* hihttps.c */
-extern hihttps_config *CONFIG;
+/* aihttps.c */
+extern aihttps_config *CONFIG;
 
 #define LOG_REOPEN_INTERVAL 60
 

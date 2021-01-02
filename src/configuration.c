@@ -95,7 +95,7 @@
 #define CFG_CONFIG "config"
 
 extern FILE *yyin;
-extern int yyparse(hihttps_config *);
+extern int yyparse(aihttps_config *);
 
 void cfg_cert_file_free(struct cfg_cert_file **cfptr);
 
@@ -164,14 +164,14 @@ front_arg_destroy(struct front_arg *fa)
     FREE_OBJ(fa);
 }
 
-hihttps_config *
+aihttps_config *
 config_new(void)
 {
     int i;
-    hihttps_config *r;
+    aihttps_config *r;
     struct front_arg *fa;
 
-    r = calloc(1, sizeof(hihttps_config));
+    r = calloc(1, sizeof(aihttps_config));
     AN(r);
 
     (void) i;
@@ -206,7 +206,7 @@ config_new(void)
     fa->pspec = strdup("default");
     HASH_ADD_KEYPTR(hh, r->LISTEN_ARGS, fa->pspec, strlen(fa->pspec), fa);
     r->LISTEN_DEFAULT = fa;
-    r->OCSP_DIR           = strdup("/var/lib/hihttps/");
+    r->OCSP_DIR           = strdup("/var/lib/aihttps/");
     r->OCSP_VFY = 0;
     r->OCSP_RESP_TMO = 10.0;
     r->OCSP_CONN_TMO = 4.0;
@@ -249,7 +249,7 @@ config_new(void)
 }
 
 void
-config_destroy(hihttps_config *cfg)
+config_destroy(aihttps_config *cfg)
 {
     // printf("config_destroy() in pid %d: %p\n", getpid(), cfg);
     struct front_arg *fa, *ftmp;
@@ -655,7 +655,7 @@ config_param_shcupd_mcastif(char *str, char **iface, char **ttl)
 }
 
 static int
-config_param_shcupd_peer(char *str, hihttps_config *cfg)
+config_param_shcupd_peer(char *str, aihttps_config *cfg)
 {
     if (cfg == NULL) {
         config_error_set("Configuration pointer is NULL.");
@@ -727,7 +727,7 @@ config_param_shcupd_peer(char *str, hihttps_config *cfg)
 #endif /* USE_SHARED_CACHE */
 
 static int
-check_frontend_uniqueness(struct front_arg *cur_fa, hihttps_config *cfg)
+check_frontend_uniqueness(struct front_arg *cur_fa, aihttps_config *cfg)
 {
     struct front_arg *fa, *fatmp;
     HASH_ITER(hh, cfg->LISTEN_ARGS, fa, fatmp) {
@@ -743,7 +743,7 @@ check_frontend_uniqueness(struct front_arg *cur_fa, hihttps_config *cfg)
 }
 
 int
-front_arg_add(hihttps_config *cfg, struct front_arg *fa)
+front_arg_add(aihttps_config *cfg, struct front_arg *fa)
 {
     struct vsb pspec;
 
@@ -796,7 +796,7 @@ front_arg_add(hihttps_config *cfg, struct front_arg *fa)
 }
 
 int
-config_param_validate(char *k, char *v, hihttps_config *cfg,
+config_param_validate(char *k, char *v, aihttps_config *cfg,
     char *file, int line)
 {
     int r = 1;
@@ -1013,7 +1013,7 @@ config_param_validate(char *k, char *v, hihttps_config *cfg,
 }
 
 static int
-config_file_parse(char *file, hihttps_config *cfg)
+config_file_parse(char *file, aihttps_config *cfg)
 {
     FILE *fp = NULL;
     int r = 0;
@@ -1117,7 +1117,7 @@ config_disp_log_facility (int facility)
 }
 
 int
-config_scan_pem_dir(char *pemdir, hihttps_config *cfg)
+config_scan_pem_dir(char *pemdir, aihttps_config *cfg)
 {
     int n, i;
     struct dirent **d;
@@ -1166,7 +1166,7 @@ config_scan_pem_dir(char *pemdir, hihttps_config *cfg)
 void
 config_print_usage_fd(char *prog, FILE *out)
 {
-    hihttps_config *cfg;
+    aihttps_config *cfg;
 
     cfg = config_new();
     AN(cfg);
@@ -1174,7 +1174,7 @@ config_print_usage_fd(char *prog, FILE *out)
     if (out == NULL)
         out = stderr;
     fprintf(out, "Usage: %s [OPTIONS] PEM\n\n", basename(prog));
-    fprintf(out, "This is hihttps, The Scalable TLS Unwrapping Daemon.\n\n");
+    fprintf(out, "This is aihttps, The Scalable TLS Unwrapping Daemon.\n\n");
     fprintf(out, "CONFIGURATION:\n");
     fprintf(out, "\n");
     fprintf(out, "        --config=FILE      Load configuration from specified file.\n");
@@ -1279,7 +1279,7 @@ config_print_usage(char *prog)
 }
 
 static int
-create_alpn_callback_data(hihttps_config *cfg, char **error)
+create_alpn_callback_data(aihttps_config *cfg, char **error)
 {
     size_t i = 1, j, l;
 
@@ -1330,7 +1330,7 @@ create_alpn_callback_data(hihttps_config *cfg, char **error)
 }
 
 int
-config_parse_cli(int argc, char **argv, hihttps_config *cfg)
+config_parse_cli(int argc, char **argv, aihttps_config *cfg)
 {
     static int tls = 0, ssl = 0;
     static int client = 0;
@@ -1569,7 +1569,7 @@ CFG_ON('s', CFG_SYSLOG);
                 " backend.\n");
         */
 #ifndef OPENSSL_WITH_ALPN
-        fprintf(stderr, ALPN_NPN_PREFIX_STR " Warning: hihttps has been"
+        fprintf(stderr, ALPN_NPN_PREFIX_STR " Warning: aihttps has been"
             " compiled against a version of OpenSSL without ALPN"
             " support.\n");
 #endif

@@ -13,8 +13,8 @@
  */
 
 
-#ifndef HIHTTPS_H_INCLUDED
-#define HIHTTPS_H_INCLUDED
+#ifndef AIHTTPS_H_INCLUDED
+#define AIHTTPS_H_INCLUDED
 
 #include "config.h"
 
@@ -151,4 +151,4 @@ typedef struct proxystate {
 
 X509 * Find_issuer(X509 *subj, STACK_OF(X509) *chain);
 
-#endif  /* HIHTTPS_H_INCLUDED */
+#endif  /* AIHTTPS_H_INCLUDED */

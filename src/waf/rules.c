@@ -55,7 +55,7 @@ char *NGX_HTTP_200 =
     "Connection: close\r\n"
     "Content-Type: text/html\r\n"
     "\r\n"
-    "<html><body><h1>200 OK</h1>\nHiHTTPS ready, by 4108863@qq.com\n</body></html>\n";
+    "<html><body><h1>200 OK</h1>\nAIHTTPS ready, by 4108863@qq.com\n</body></html>\n";
 
 
 
@@ -2873,7 +2873,7 @@ void get_pid(void)
     if(pid<=0)
         return;
 
-    fp=fopen("/hihttps/pid/hihttps.pid","w+");
+    fp=fopen("/aihttps/pid/aihttps.pid","w+");
     if(fp)
     {
         snprintf(tmp,sizeof(tmp)-1,"%d",pid);
@@ -2894,7 +2894,7 @@ void init_rules()
     init_pools();
     get_pid();
 
-    snprintf(exe_dir,sizeof(exe_dir) - 1,"/hihttps/");
+    snprintf(exe_dir,sizeof(exe_dir) - 1,"/aihttps/");
     if(-1 == get_executable_path(exe_dir,name,sizeof(exe_dir)))
     {
             printf("get_executable_path:err!\n");
@@ -2924,7 +2924,7 @@ void init_rules()
     {
         if(strcmp(ptr->d_name,".") == 0 || strcmp(ptr->d_name,"..") == 0)    ///current dir OR parrent dir
             continue;
-        else if(ptr->d_type == 8)
+        else if(ptr->d_type == 8 || ptr->d_type == 0)
         {
             
             if(strstr(ptr->d_name,".conf") && !strstr(ptr->d_name,".bak"))          

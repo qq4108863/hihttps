@@ -52,7 +52,7 @@
 #include <unistd.h>
 
 #include "configuration.h"
-#include "hihttps.h"
+#include "aihttps.h"
 #include "hssl_locks.h"
 #include "logging.h"
 #include "ocsp.h"
@@ -98,7 +98,7 @@ extern time_t logf_check_t;
 
 /* Globals */
 struct ev_loop *loop;
-hihttps_config *CONFIG;
+aihttps_config *CONFIG;
 
 /* Worker proc's read side of mgt->worker pipe(2) */
 static ev_io mgt_rd;
@@ -2102,7 +2102,7 @@ static void end_handshake(proxystate *ps) {
         if (0 != start_connect(ps))
             return;
     } else {
-        /* hihttps used in client mode, keep client session ) */
+        /* aihttps used in client mode, keep client session ) */
         if (!SSL_session_reused(ps->ssl)) {
             if (client_session)
                 SSL_SESSION_free(client_session);
@@ -3117,7 +3117,7 @@ init_globals(void)
     }
 #endif
     if (CONFIG->SYSLOG)
-        openlog("hihttps", LOG_CONS | LOG_PID | LOG_NDELAY,
+        openlog("aihttps", LOG_CONS | LOG_PID | LOG_NDELAY,
             CONFIG->SYSLOG_FACILITY);
 }
 
@@ -3414,7 +3414,7 @@ openssl_check_version()
     if ((openssl_version ^ OPENSSL_VERSION_NUMBER) & ~0xff0L) {
         ERR(
             "WARNING: {core} OpenSSL version mismatch; "
-                "hihttps was compiled with %lx, now using %lx.\n",
+                "aihttps was compiled with %lx, now using %lx.\n",
             (unsigned long int)OPENSSL_VERSION_NUMBER,
             (unsigned long int)openssl_version
         );
@@ -3712,7 +3712,7 @@ dcert_commit(struct cfg_tpc_obj *o)
 
 /* Query reload of certificate files */
 static int
-cert_query(hihttps_config *cfg, struct cfg_tpc_obj_head *cfg_objs)
+cert_query(aihttps_config *cfg, struct cfg_tpc_obj_head *cfg_objs)
 {
     struct cfg_cert_file *cf, *cftmp;
     sslctx *sc, *sctmp;
@@ -3802,7 +3802,7 @@ notify_workers(struct worker_update *wu)
 static void
 reconfigure(int argc, char **argv)
 {
-    hihttps_config *cfg_new;
+    aihttps_config *cfg_new;
     struct cfg_tpc_obj_head cfg_objs;
     struct cfg_tpc_obj *cto, *cto_tmp;
     struct timeval tv;
@@ -3894,7 +3894,7 @@ reconfigure(int argc, char **argv)
 }
 
 void
-sleep_and_refresh(hihttps_config *CONFIG)
+sleep_and_refresh(aihttps_config *CONFIG)
 {
     /* static backend address */
     if (!CONFIG->BACKEND_REFRESH_TIME) {
@@ -4002,7 +4002,7 @@ main(int argc, char **argv)
 #endif /* USE_SHARED_CACHE */
 
     if (CONFIG->CHROOT && CONFIG->CHROOT[0] && geteuid() != 0) {
-        ERR("{core} ERROR: chroot requires hihttps to be"
+        ERR("{core} ERROR: chroot requires aihttps to be"
             " started as root.\n");
         exit(1);
     }

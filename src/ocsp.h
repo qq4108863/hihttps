@@ -5,7 +5,7 @@
 #ifndef OCSP_H_INCLUDED
 #define OCSP_H_INCLUDED
 
-#include "hihttps.h"
+#include "aihttps.h"
 
 typedef struct ocspquery_s {
 	unsigned	magic;

@@ -19,12 +19,12 @@
 #include <unistd.h>
 
 #include "logging.h"
-#include "hihttps.h"
+#include "aihttps.h"
 #include "ocsp.h"
 #include "configuration.h"
 
-/* hihttps.c */
-extern hihttps_config *CONFIG;
+/* aihttps.c */
+extern aihttps_config *CONFIG;
 extern struct ev_loop *loop;
 
 void

@@ -198,6 +198,6 @@ typedef union YYSTYPE YYSTYPE;
 
 extern YYSTYPE yylval;
 
-int yyparse (hihttps_config *cfg);
+int yyparse (aihttps_config *cfg);
 
 #endif /* !YY_YY_CFG_PARSER_H_INCLUDED  */

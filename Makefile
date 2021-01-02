@@ -1,4 +1,4 @@
-TARGET=hihttps
+TARGET=aihttps
 
 all:
 	cd src; make

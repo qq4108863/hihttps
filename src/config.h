@@ -62,19 +62,19 @@
 #define HAVE_WORKING_VFORK 1
 
 /* Name of package */
-#define PACKAGE "hihttps"
+#define PACKAGE "aihttps"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "4108863@qq.com"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "hihttps"
+#define PACKAGE_NAME "aihttps"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "hihttps 2.0.0"
+#define PACKAGE_STRING "aihttps 2.0.0"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "hihttps"
+#define PACKAGE_TARNAME "aihttps"
 
 /* Define to the home page for this package. */
 #define PACKAGE_URL ""

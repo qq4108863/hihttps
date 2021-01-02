@@ -1171,7 +1171,7 @@ static void read_gan_rule(void)
         uri_name.data = name;
         uri_name.len  = name_len;
 
-       // printf("%-8d URL=%-64s  mean=%-8g   sigma=%-8g  hash=%-16u  name_len=%-8d\n",count,name,mean,sigma,hash,name_len);
+        //printf("%-8d URL=%-64s  mean=%-8g   sigma=%-8g  hash=%-16u  name_len=%-8d\n",count,name,mean,sigma,hash,name_len);
 
         file = ngx_open_file_lookup(cache, &uri_name, hash);
         if (file) {
@@ -1386,8 +1386,8 @@ ai_file_train_init(char *exe_dir)
     time_random_matrix(10, 20, 8, 16, 8);
     hashmap_open(&hash_ip_urls, 65521);	
 
-    snprintf(GAN_FILE,sizeof(GAN_FILE) - 1,"%srules/gan.rule",exe_dir); /* /hihttps/rules/gan.rule*/
-    snprintf(TRAIN_LOG_DIR,sizeof(TRAIN_LOG_DIR) - 1,"%strain/",exe_dir); /* /hihttps/train/ */
+    snprintf(GAN_FILE,sizeof(GAN_FILE) - 1,"%srules/gan.rule",exe_dir); /* /aihttps/rules/gan.rule*/
+    snprintf(TRAIN_LOG_DIR,sizeof(TRAIN_LOG_DIR) - 1,"%strain/",exe_dir); /* /aihttps/train/ */
 
     
 
