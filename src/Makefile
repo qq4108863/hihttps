@@ -7,4 +7,5 @@ $(TARGET): $(SRC)
 	$(CC)  -o $@  $^ $(CFLAGS) $(LDFLAGS) $(LIB)
 clean:
 	rm -f $(TARGET) $(OBJ)
+	
 

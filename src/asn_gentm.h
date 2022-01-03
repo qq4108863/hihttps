@@ -9,7 +9,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * For more ,please contact QQ/wechat:4108863 mail:4108863@qq.com
+ * For more ,please contact QQ/wechat:4108863  mail:4108863@qq.com
  */
 
 

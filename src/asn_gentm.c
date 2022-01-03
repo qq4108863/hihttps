@@ -9,7 +9,7 @@
 
 /* This code is borrowed from the openssl library, which conveniently
  * doesn't expose any functions for converting an ASN1_GENERALIZEDTIME
- * to a sane timestamp format.
+ * to a sane timestamp  format.
  */
 
 #include <stdio.h>
