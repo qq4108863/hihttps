@@ -11,7 +11,7 @@
 	    10.无监督机器学习、自主生成对抗规则
 	    .....	   
 	    
-二、编译运行
+二、编译运行,测试推荐CentOS7
   1. 安装openssl和libpcre库
   CentOS : 
   	yum install openssl openssl-devel
@@ -42,6 +42,7 @@
   
   
   2.机器学习/自主对抗规则测试方法：
+  机器学习原理：https://www.freebuf.com/articles/web/226418.html
   
   机器学习是核心，但采集样本需要一定时间，为了方便测试，默认了一条aihttps.html对抗规则：
   如果访问https://serverip/aihttps.html?id=123采集到的样本大于99%都是这种形态，那么下面的网址都将产生攻击报警：

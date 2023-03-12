@@ -1,5 +1,5 @@
 /**
- * configuration.c 
+ * configuration.c  by wechat:httpwaf  
  *
  */
 
