@@ -741,7 +741,7 @@ static int chk_word2vec_dim(ngx_str_t *name,char *vocab ,int words)
  if(name->len >= max_size) 
     return 0;
  
- sprintf(st1,name->data);
+ sprintf(st1,"%s",name->data);
 
 
   a = 0;
