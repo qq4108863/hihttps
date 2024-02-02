@@ -34,6 +34,12 @@
 #include "../libinjection/libinjection_xss.h"
 #include "../machine-learning/machine-learning.h"
 #include "../machine-learning/simhash.h"
+#include "../waf/ssl_regex.h"
+
+
+ngx_global_var gvar;
+ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
+ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 
 
@@ -723,7 +729,7 @@ mod_str_from_file(ngx_conf_t *r, ngx_str_t *tmp, ngx_http_rule_t *rule)
   ngx_str_t    *str;
   uint        i;
   FILE *fp = NULL;
-  char filename[256],line[128],*p;
+  char filename[MAX_LEN+16],line[128],*p;
   int len;
 
   char path[MAX_LEN+1] = {0};
@@ -1904,12 +1910,12 @@ add_rules(ngx_conf_t *cf, char *p1,char *p2 ,char *p3,
   if(rule.log_msg && rule.log_msg->data)
   {
        if(rule.severity == 1)
-          printf("%d        severity:'CRITICAL'        %s\n",rule.rule_id,rule.log_msg->data);
+          printf("%lu        severity:'CRITICAL'        %s\n",rule.rule_id,rule.log_msg->data);
      else
-         printf("%d        severity:'WARNING'        %s\n",rule.rule_id,rule.log_msg->data);
+         printf("%lu        severity:'WARNING'        %s\n",rule.rule_id,rule.log_msg->data);
   }
   else
-      printf("%d                abnormal\n",rule.rule_id);
+      printf("%lu                abnormal\n",rule.rule_id);
    
   if (rule.br->headers || rule.br->headers_var) {
       
@@ -2628,7 +2634,7 @@ int parse_modsecurity_rule(char *buf)
 void read_modsecurity_config_file(const char *config_dir,char *file)
 {
     
-    char filename[MAX_LEN+1] = {0};
+    char filename[MAX_LEN+16] = {0};
     char path[MAX_LEN+1] = {0};
     char name[16] = {0};
     char line[2048],rule_str[4096];
@@ -2642,10 +2648,10 @@ void read_modsecurity_config_file(const char *config_dir,char *file)
         if(-1 == get_executable_path(path,name,sizeof(path)))
             return;
         
-        snprintf(filename,MAX_LEN,"%s%s",path,file);
+        snprintf(filename,MAX_LEN + 15,"%s%s",path,file);
     }
     else
-        snprintf(filename,MAX_LEN,"%s%s",config_dir,file);
+        snprintf(filename,MAX_LEN + 15,"%s%s",config_dir,file);
     
 
     fp = fopen(filename,"r");
@@ -2755,7 +2761,7 @@ int parse_naxsi_rule(char *buf)
 void read_naxsi_config_file(const char *config_dir,char *file)
 {
     
-    char filename[MAX_LEN+1] = {0};
+    char filename[MAX_LEN+16] = {0};
     char path[MAX_LEN+1] = {0};
     char name[16] = {0};
     char line[512],rule_str[1024];
@@ -2770,10 +2776,10 @@ void read_naxsi_config_file(const char *config_dir,char *file)
         if(-1 == get_executable_path(path,name,sizeof(path)))
             return;
         
-        snprintf(filename,MAX_LEN,"%s%s",path,file);
+        snprintf(filename,MAX_LEN + 16,"%s%s",path,file);
     }
     else
-        snprintf(filename,MAX_LEN,"%s%s",config_dir,file);
+        snprintf(filename,MAX_LEN + 16,"%s%s",config_dir,file);
     
 
     fp = fopen(filename,"rb");
@@ -2888,7 +2894,7 @@ void init_rules()
     
     DIR *dir;
     struct dirent *ptr;    
-    char rule_dir[MAX_LEN+1],exe_dir[MAX_LEN+1];
+    char rule_dir[MAX_LEN+16],exe_dir[MAX_LEN+1];
     char name[16];    
     
     init_pools();
@@ -2912,11 +2918,12 @@ void init_rules()
     
     printf("The OWASP ModSecurity Core Rule Set (CRS) is a set of generic attack detection rules for use with ModSecurity or compatible web application firewalls. \n");    
 
-    snprintf(rule_dir,MAX_LEN,"%srules/",exe_dir);
+    snprintf(rule_dir,MAX_LEN + 16,"%srules/",exe_dir);
     if ((dir = opendir(rule_dir)) == NULL)
     {
         perror("Open rule dir error...");
         printf("Not found any rules,Please visit https://github.com/SpiderLabs/owasp-modsecurity-crs to download the OWASP ModSecurity Core Rule...\n\n");
+        exit(0);
         return;
     }
     

@@ -18,7 +18,7 @@
 
 #ifndef __NAXSI_LOG_DEBUG
 #define __NAXSI_LOG_DEBUG
-#define NX_LOG_DEBUG(FEATURE, DEF, LOG, ST, ...) printf("")
+#define NX_LOG_DEBUG(FEATURE, DEF, LOG, ST, ...) printf(" ")
 #endif
 
 
@@ -315,7 +315,7 @@ typedef struct
 
 } ngx_global_var;
 
-ngx_global_var gvar;
+extern ngx_global_var gvar;
 
 
 
@@ -521,8 +521,8 @@ typedef struct ngx_http_nx_json_s {
 //#define JSON_MAX_DEPTH 10
 
 
-ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
-ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
+extern ngx_http_rule_t *nx_int__libinject_sql; /*ID:17*/
+extern ngx_http_rule_t *nx_int__libinject_xss; /*ID:18*/
 
 int chk_all_rules(ngx_str_t *name,enum DUMMY_MATCH_ZONE,http_waf_msg *req);
 int chk_mqtt_rules(ngx_str_t *name, enum DUMMY_MATCH_ZONE	zone,mqtt_waf_msg *req);

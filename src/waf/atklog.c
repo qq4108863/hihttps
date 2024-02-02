@@ -10,12 +10,13 @@
  * GNU General Public License for more details.
  *
  * For more ,please contact QQ:4108863/wechat:wmkwang/mail:4108863@qq.com
- * http://www.hihttps.com
+ * https://hihttps.gitee.io/
  */
 
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <ctype.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -258,12 +259,12 @@ void log_http_to_file(struct sockaddr_storage addr,http_waf_msg *req,int action,
     
     if(req->mtd == HTTP_MT_GET)
     {
-        len += snprintf(buf + len,max_len,"GET ",req->req_dir);             
+        len += snprintf(buf + len,max_len,"GET ");             
         max_len = msg_len - len;
     }
     if(req->mtd == HTTP_MT_POST)
     {
-        len += snprintf(buf + len,max_len,"POST ",req->req_dir);             
+        len += snprintf(buf + len,max_len,"POST ");             
         max_len = msg_len - len;
     }
 

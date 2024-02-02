@@ -4,7 +4,7 @@ OBJ=$(addprefix ./, $(addsuffix .o, $(basename $(SRC))))
 TARGET=aihttps
 all: $(TARGET)
 $(TARGET): $(SRC)
-	$(CC)  -o $@  $^ $(CFLAGS) $(LDFLAGS) $(LIB)
+	$(CC)  -w -o $@  $^ $(CFLAGS) $(LDFLAGS) $(LIB)
 clean:
 	rm -f $(TARGET) $(OBJ)
 	

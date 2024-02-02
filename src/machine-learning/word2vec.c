@@ -387,7 +387,7 @@ void *TrainModelThread(void *id) {
   real *neu1 = (real *)calloc(layer1_size, sizeof(real));
   real *neu1e = (real *)calloc(layer1_size, sizeof(real));
   FILE *fi = fopen(train_file, "rb");
-  if(fi == NULL) return;
+  if(fi == NULL) return NULL;
   fseek(fi, file_size / (long long)num_threads * (long long)id, SEEK_SET);
   while (1) {
     if (word_count - last_word_count > 10000) {

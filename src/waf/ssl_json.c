@@ -202,7 +202,7 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
       {
 	/* parse extracted values. */
 	  ngx_gen_json_name(js);
-	  printf("%d  val =%.*s\n",js->depth,val.len,val.data);
+	  //printf("%d  val =%.*s\n",js->depth,val.len,val.data);
 	
       }
     return (ret);
@@ -220,7 +220,7 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
 	//val.data[val.len] = '\0';
 	//js->off++;
 	ngx_gen_json_name(js);
-  	printf("  num val=%.*s\n",val.len,val.data);
+  	//printf("  num val=%.*s\n",val.len,val.data);
     
     return (NGX_OK);
   }
@@ -242,7 +242,7 @@ ngx_http_nx_json_val(ngx_json_t *js,http_waf_msg *req) {
 	//val.data[val.len] = '\0';
 	//js->off++;
 	ngx_gen_json_name(js);
-  	printf("  bool val=%.*s\n",val.len,val.data);
+//  	printf("  bool val=%.*s\n",val.len,val.data);
    
     return (NGX_OK);
   }
@@ -414,7 +414,7 @@ ngx_http_dummy_json_parse(	  char  	 *src,	  int len,http_waf_msg *req)
 	js.off++;
 	ngx_http_nx_json_forward(&js);
 	if (js.off != js.len)
-		printf("nx_int__invalid_json----------%d--%d\n",js.off,js.len);
+		printf("nx_int__invalid_json----------%lu--%lu\n",js.off,js.len);
 	   //ngx_http_apply_rulematch_v_n(&nx_int__invalid_json, ctx, r, NULL, NULL, BODY, 1, 0);
 	  return ;
 

@@ -10,12 +10,12 @@
  * GNU General Public License for more details.
  *
  * For more ,please contact QQ/wechat:4108863/mail:4108863@qq.com
- * http://www.hihttps.com
+ * https://hihttps.gitee.io/
  */
 
 
 
-
+#include<netinet/in.h>
 #include <sys/dir.h>
 #include <math.h>
 #include "machine-learning.h"
@@ -25,6 +25,8 @@
 #include "cnn.h"
 #include "word2vec.h"
 #include "../waf/hashmap.h"
+#include "../waf/ssl_utils.h"	
+#include "../waf/ssl_hash.h"	
 
 
 
@@ -261,9 +263,9 @@ rbtree_print(ngx_rbtree_node_t *node, ngx_rbtree_key_t key, int direction)
     if(node != NULL)
     {
         if(direction==0)    // tree是根节点
-            printf("%u(B) is root\n", node ->key);
+            printf("%lu(B) is root\n", node ->key);
         else                // tree是分支节点
-            printf("%u(%s) is %u's %6s child\n", node ->key, ngx_rbt_is_red(node)?"R":"B", key, direction==1?"right" : "left");
+            printf("%lu(%s) is %lu's %6s child\n", node ->key, ngx_rbt_is_red(node)?"R":"B", key, direction==1?"right" : "left");
  
         rbtree_print(node ->left, node ->key, -1);
         rbtree_print(node ->right,node ->key,  1);
@@ -821,11 +823,11 @@ static void print_args_rule(ngx_cached_open_file_t         *file)
      ngx_list_t            *new_list,*l;
 
      if (file->uri_rule.num > MIN_TRAIN_SAMPLE)
-        printf("\n**********URL param : mean=%g,sigma=%g sample_num=%d****************************************************\n",file->uri_rule.mean,file->uri_rule.sigma,file->uri_rule.num);
+        printf("\n**********URL param : mean=%g,sigma=%g sample_num=%ld****************************************************\n",file->uri_rule.mean,file->uri_rule.sigma,file->uri_rule.num);
      l = file->args_rule;
      while (l != NULL) {
             c++;
-            printf("********** %d name=%-32s,mean=%-8g,sigma=%-8g,num=%-8d,is_number=%d\n",c,l->data,l->mean,l->sigma,l->num,l->is_number);
+            printf("********** %d name=%-32s,mean=%-8g,sigma=%-8g,num=%-8ld,is_number=%d\n",c,l->data,l->mean,l->sigma,l->num,l->is_number);
             l = l->next;
      }
      
@@ -952,7 +954,7 @@ free_list(void)
 
 static void generate_word2vec(ngx_cached_open_file_t         *file)
 {
-    char in[256],out[256],*p;
+    char in[266],out[256],*p;
 
     if (file->name == NULL)
         return;
@@ -966,7 +968,7 @@ static void generate_word2vec(ngx_cached_open_file_t         *file)
 
 
     snprintf(in,sizeof(in) - 1,"%strain.txt",TRAIN_LOG_DIR);
-    snprintf(out,sizeof(out) - 1,"./vector/%u_%s.bin",file->node.key,p);
+    snprintf(out,sizeof(out) - 1,"./vector/%lu_%s.bin",file->node.key,p);
     
     word2vec(in,out,MIN_TRAIN_SAMPLE / 2);
     
@@ -996,7 +998,7 @@ static void read_word2vec_dim(ngx_cached_open_file_t         *file)
         p++;
     else
         p = file->name;   
-    snprintf(file_name,sizeof(file_name) - 1,"./vector/%u_%s.bin",file->node.key,p);
+    snprintf(file_name,sizeof(file_name) - 1,"./vector/%lu_%s.bin",file->node.key,p);
 
     f = fopen(file_name, "rb");
     if (f == NULL) {
@@ -1039,7 +1041,7 @@ static void read_word2vec_dim(ngx_cached_open_file_t         *file)
 
     file->vocab = vocab;
     file->words = (int)words;
-    printf("         word2vec dim :%s word=%d\n",file_name,words);
+    printf("         word2vec dim :%s word=%llu\n",file_name,words);
 
 
 }
@@ -1501,7 +1503,7 @@ analyse_train_param(u_char *begin,u_char *end,ngx_uint_t line,ngx_uint_t only_co
     orig = str;
     full_len = end - args;//strlen(orig);
     if(full_len <= 0)
-        return;
+        return 0;
     
     while (str < (orig+full_len) && *str) 
     {
@@ -1551,7 +1553,7 @@ analyse_train_param(u_char *begin,u_char *end,ngx_uint_t line,ngx_uint_t only_co
               eq = strnchr(str, '=', len);
               if (!eq) /*malformed url, possible attack*/
               {    
-                return ;
+                return 0;
               }
               eq++;
               val.data = (unsigned char *) eq;
@@ -1561,13 +1563,13 @@ analyse_train_param(u_char *begin,u_char *end,ngx_uint_t line,ngx_uint_t only_co
         }
 
         if (name.len > MAX_NAME_LEN) {
-             printf("arg names too long-----------------------return--------------------%d\n",name.len);
+             printf("arg names too long-----------------------return--------------------%lu\n",name.len);
             // str++;
              return 0;
         }
 
         if (val.len > MAX_VALUE_LEN) {
-             printf("arg value too long-------------------return------------------------%d\n",val.len);
+             printf("arg value too long-------------------return------------------------%lu\n",val.len);
              //str++;
             return 0;
         }
@@ -1710,7 +1712,7 @@ filter_train_http_line(u_char *buf,size_t fsize,ngx_cached_open_file_t         *
        if(count > max ||  count < min) {
            p += 13;
            *p ='#';
-           printf("line %d params=%d abnomal len=%d, fliter it..\n",line * 2,count,len);
+           printf("line %d params=%lu abnomal len=%d, fliter it..\n",line * 2,count,len);
        }
         
    

@@ -21,7 +21,6 @@
 #define SIMHASH_RULE_ID 105
 
 
-Hashmap hash_files;
 
 void init_simhash_from_atkfile(void);
 

@@ -24,13 +24,18 @@
 #include <stdlib.h>
 #include <string.h>     
 #include <unistd.h>
+#include <ctype.h>
 
 #include "simhash.h"
 
 #include "../waf/ssl_array.h"
 #include "../waf/wwwfiles.h"
+#include "../waf/rules.h"
+#include "../waf/ssl_utils.h"
 
 
+
+Hashmap hash_files;
 
 
 
