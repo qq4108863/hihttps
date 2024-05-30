@@ -34,7 +34,7 @@
   通常aihttps前端绑定443端口（https），后端反向代理80端口; 首先保证Web服务器80端口运行正常，443端口没占用。  
   ./aihttps默认读取当前目录下的confg.cfg文件，  或者./aihttps --config /dir/config.cfg， 打印出规则就成功。
   
-三、测试  
+三、攻击测试  
   1.ModSecuriyt规则测试
   rules/main.rule默认加载了一条SQL语句检测规则，可以访问https://serverip/select.html?testsql=delete * from test
   或者用Kali系统的漏洞扫描器nikto运行：./nikto  -host serverip -ssl -port 443 -C all
